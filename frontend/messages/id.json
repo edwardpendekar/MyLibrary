@@ -1,0 +1,136 @@
+{
+  "nav": {
+    "home": "Beranda",
+    "search": "Cari",
+    "favorites": "Favorit",
+    "admin": "Admin",
+    "login": "Masuk",
+    "logout": "Keluar",
+    "register": "Buat akun"
+  },
+  "home": {
+    "title": "Temukan buku untuk dibaca",
+    "subtitle": "Teks bergaya Alkitab, novel, dan referensi — baca online atau sebagai PDF.",
+    "popular": "Populer",
+    "allBooks": "Semua buku",
+    "filterCategory": "Kategori",
+    "filterLanguage": "Bahasa",
+    "searchPlaceholder": "Cari buku, ayat, atau penulis...",
+    "noResults": "Buku tidak ditemukan.",
+    "loadMore": "Muat lebih banyak"
+  },
+  "book": {
+    "read": "Baca",
+    "openPdf": "Buka PDF",
+    "downloadPdf": "Unduh PDF",
+    "favorite": "Favoritkan",
+    "unfavorite": "Hapus favorit",
+    "share": "Bagikan",
+    "chapters": "pasal",
+    "verses": "ayat",
+    "by": "oleh {author}",
+    "description": "Deskripsi",
+    "notFound": "Buku ini tidak ditemukan."
+  },
+  "reader": {
+    "chapters": "Daftar Pasal",
+    "bookmarks": "Markah",
+    "notes": "Catatan",
+    "search": "Cari dalam buku",
+    "fontSize": "Ukuran huruf",
+    "compareTranslation": "Bandingkan terjemahan",
+    "copy": "Salin",
+    "copied": "Disalin ke clipboard",
+    "highlight": "Sorot",
+    "share": "Bagikan ayat",
+    "addBookmark": "Tambah markah",
+    "addNote": "Tambah catatan",
+    "notePlaceholder": "Tulis catatan...",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "emptyBookmarks": "Belum ada markah.",
+    "emptyNotes": "Belum ada catatan."
+  },
+  "pdf": {
+    "zoomIn": "Perbesar",
+    "zoomOut": "Perkecil",
+    "fullscreen": "Layar penuh",
+    "search": "Cari dalam dokumen",
+    "page": "Halaman",
+    "of": "dari",
+    "darkMode": "Mode gelap",
+    "bookmarkPage": "Tandai halaman ini"
+  },
+  "search": {
+    "title": "Cari",
+    "placeholder": "Cari ayat, pasal, dan buku...",
+    "booksTab": "Buku",
+    "versesTab": "Ayat",
+    "noResults": "Tidak ada hasil untuk \"{query}\".",
+    "resultsCount": "{count, plural, =0 {Tidak ada hasil} one {# hasil} other {# hasil}}"
+  },
+  "auth": {
+    "loginTitle": "Masuk ke akun Anda",
+    "registerTitle": "Buat akun baru",
+    "name": "Nama",
+    "email": "Email",
+    "password": "Kata sandi",
+    "submitLogin": "Masuk",
+    "submitRegister": "Buat akun",
+    "noAccount": "Belum punya akun?",
+    "haveAccount": "Sudah punya akun?",
+    "invalidCredentials": "Email atau kata sandi salah."
+  },
+  "admin": {
+    "dashboard": "Dasbor",
+    "books": "Buku",
+    "import": "Impor",
+    "categories": "Kategori",
+    "languages": "Bahasa",
+    "users": "Pengguna",
+    "auditLog": "Log audit",
+    "stats": {
+      "totalBooks": "Total buku",
+      "publishedBooks": "Diterbitkan",
+      "totalChapters": "Pasal",
+      "totalVerses": "Ayat",
+      "totalUsers": "Pengguna",
+      "importsLast30Day": "Impor (30h)"
+    },
+    "import_": {
+      "upload": "Unggah file",
+      "uploadHint": "xlsx, xls, atau csv dengan kolom Book, Chapter, Verse, text_en, text_id, title_en, title_id",
+      "preview": "Pratinjau",
+      "commit": "Mulai impor",
+      "history": "Riwayat impor",
+      "rowsTotal": "Total baris",
+      "distinctBooks": "Buku",
+      "distinctChapters": "Pasal",
+      "validationErrors": "Kesalahan validasi",
+      "mode": "Mode impor",
+      "modeInsert": "Hanya tambah (lewati duplikat)",
+      "modeUpsert": "Tambah dan perbarui yang sudah ada",
+      "status": {
+        "pending": "Menunggu",
+        "validating": "Memvalidasi",
+        "ready": "Siap",
+        "importing": "Mengimpor",
+        "completed": "Selesai",
+        "failed": "Gagal",
+        "rolled_back": "Dibatalkan"
+      }
+    }
+  },
+  "common": {
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan.",
+    "retry": "Coba lagi",
+    "close": "Tutup",
+    "back": "Kembali",
+    "confirm": "Konfirmasi",
+    "delete": "Hapus",
+    "edit": "Ubah",
+    "create": "Buat",
+    "actions": "Aksi"
+  }
+}

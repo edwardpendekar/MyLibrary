@@ -1,0 +1,46 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.claude/
+
+# --- Env ---
+.env
+.env.*
+!.env.example
+!*/.env.example
+
+# --- Go (backend) ---
+backend/bin/
+backend/tmp/
+backend/*.exe
+backend/*.test
+backend/coverage.out
+backend/coverage.html
+backend/vendor/
+
+# --- Node / Next.js (frontend) ---
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.turbo/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+frontend/next-env.d.ts
+frontend/*.tsbuildinfo
+
+# --- Storage / uploads (local disk provider) ---
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+
+# --- Docker ---
+infra/postgres/data/
+infra/redis/data/
+
+# --- Logs ---
+*.log
+npm-debug.log*

@@ -1,0 +1,1331 @@
+basePath: /api/v1
+definitions:
+  domain.DashboardStats:
+    properties:
+      importsLast30Day:
+        type: integer
+      publishedBooks:
+        type: integer
+      totalBooks:
+        type: integer
+      totalChapters:
+        type: integer
+      totalUsers:
+        type: integer
+      totalVerses:
+        type: integer
+    type: object
+  dto.AuthResponse:
+    properties:
+      access_token_expires_at:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserResponse'
+    type: object
+  dto.BookResponse:
+    properties:
+      author:
+        type: string
+      category:
+        $ref: '#/definitions/dto.CategoryResponse'
+      chapters_count:
+        type: integer
+      cover_url:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      has_pdf:
+        type: boolean
+      id:
+        type: integer
+      is_favorite:
+        type: boolean
+      isbn:
+        type: string
+      language:
+        $ref: '#/definitions/dto.LanguageResponse'
+      pdf_url:
+        type: string
+      slug:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      verses_count:
+        type: integer
+      view_count:
+        type: integer
+      year:
+        type: integer
+    type: object
+  dto.BookmarkResponse:
+    properties:
+      book_id:
+        type: integer
+      chapter_id:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      label:
+        type: string
+      pdf_page:
+        type: integer
+      verse_id:
+        type: integer
+    type: object
+  dto.CategoryResponse:
+    properties:
+      id:
+        type: integer
+      name_en:
+        type: string
+      name_id:
+        type: string
+      slug:
+        type: string
+    type: object
+  dto.ChapterContentResponse:
+    properties:
+      chapter:
+        $ref: '#/definitions/dto.ChapterResponse'
+      sections:
+        items:
+          $ref: '#/definitions/dto.SectionResponse'
+        type: array
+      verses:
+        items:
+          $ref: '#/definitions/dto.VerseResponse'
+        type: array
+    type: object
+  dto.ChapterResponse:
+    properties:
+      id:
+        type: integer
+      number:
+        type: integer
+      title_en:
+        type: string
+      title_id:
+        type: string
+      verses_count:
+        type: integer
+    type: object
+  dto.CreateBookmarkRequest:
+    properties:
+      book_id:
+        type: integer
+      chapter_id:
+        type: integer
+      label:
+        maxLength: 255
+        type: string
+      pdf_page:
+        type: integer
+      verse_id:
+        type: integer
+    required:
+    - book_id
+    type: object
+  dto.ImportLogResponse:
+    properties:
+      books_created:
+        type: integer
+      chapters_created:
+        type: integer
+      created_at:
+        type: string
+      error_message:
+        type: string
+      filename:
+        type: string
+      finished_at:
+        type: string
+      id:
+        type: integer
+      mode:
+        type: string
+      processed_rows:
+        type: integer
+      sections_created:
+        type: integer
+      started_at:
+        type: string
+      status:
+        type: string
+      total_rows:
+        type: integer
+      verses_inserted:
+        type: integer
+      verses_skipped:
+        type: integer
+      verses_updated:
+        type: integer
+    type: object
+  dto.ImportPreviewResponse:
+    properties:
+      distinct_books:
+        type: integer
+      distinct_chapters:
+        type: integer
+      import_log_id:
+        type: integer
+      sample_rows:
+        items:
+          $ref: '#/definitions/dto.ImportRowResponse'
+        type: array
+      status:
+        type: string
+      total_rows:
+        type: integer
+      validation_errors:
+        items:
+          $ref: '#/definitions/dto.ImportRowErrorResponse'
+        type: array
+    type: object
+  dto.ImportRowErrorResponse:
+    properties:
+      message:
+        type: string
+      row_number:
+        type: integer
+    type: object
+  dto.ImportRowResponse:
+    properties:
+      book:
+        type: string
+      chapter:
+        type: integer
+      row_number:
+        type: integer
+      text_en:
+        type: string
+      text_id:
+        type: string
+      title_en:
+        type: string
+      title_id:
+        type: string
+      verse:
+        type: integer
+    type: object
+  dto.LanguageResponse:
+    properties:
+      code:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      native_name:
+        type: string
+    type: object
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.NoteResponse:
+    properties:
+      book_id:
+        type: integer
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      updated_at:
+        type: string
+      verse_id:
+        type: integer
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+      password:
+        maxLength: 72
+        minLength: 8
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  dto.SearchVerseHitResponse:
+    properties:
+      book_id:
+        type: integer
+      book_slug:
+        type: string
+      book_title:
+        type: string
+      chapter_id:
+        type: integer
+      chapter_number:
+        type: integer
+      rank:
+        type: number
+      snippet:
+        type: string
+      verse_id:
+        type: integer
+      verse_number:
+        type: integer
+    type: object
+  dto.SectionResponse:
+    properties:
+      end_verse_number:
+        type: integer
+      id:
+        type: integer
+      start_verse_number:
+        type: integer
+      title_en:
+        type: string
+      title_id:
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+  dto.VerseResponse:
+    properties:
+      id:
+        type: integer
+      number:
+        type: integer
+      section_id:
+        type: integer
+      text_en:
+        type: string
+      text_id:
+        type: string
+    type: object
+  response.Envelope:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorBody'
+      meta: {}
+      success:
+        type: boolean
+    type: object
+  response.ErrorBody:
+    properties:
+      code:
+        type: string
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: |-
+    REST API for the Book Reader platform: public reading endpoints
+    (books, chapters, verses, search, favorites, bookmarks, notes)
+    and role-gated admin endpoints (books CRUD, Excel/CSV import,
+    reference data, users, audit log).
+  title: Book Reader API
+  version: "1.0"
+paths:
+  /admin/audit-logs:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Envelope'
+      summary: List audit log entries
+      tags:
+      - admin-audit
+  /admin/books:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.BookResponse'
+                  type: array
+              type: object
+      summary: List all books (any status) for the admin table
+      tags:
+      - admin-books
+    post:
+      consumes:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BookResponse'
+              type: object
+      summary: Create a book
+      tags:
+      - admin-books
+  /admin/books/{id}:
+    delete:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Soft-delete a book
+      tags:
+      - admin-books
+    get:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BookResponse'
+              type: object
+      summary: Get a book by ID (admin edit form)
+      tags:
+      - admin-books
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BookResponse'
+              type: object
+      summary: Update a book
+      tags:
+      - admin-books
+  /admin/books/{id}/cover:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: cover image (jpg/png/webp, max 5MB)
+        in: formData
+        name: file
+        required: true
+        type: file
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Envelope'
+      summary: Upload a book cover image
+      tags:
+      - admin-files
+  /admin/books/{id}/pdf:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: PDF file (max 200MB)
+        in: formData
+        name: file
+        required: true
+        type: file
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Envelope'
+      summary: Upload a book's PDF ebook
+      tags:
+      - admin-files
+  /admin/categories:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.CategoryResponse'
+                  type: array
+              type: object
+      tags:
+      - admin-categories
+    post:
+      consumes:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CategoryResponse'
+              type: object
+      tags:
+      - admin-categories
+  /admin/categories/{id}:
+    delete:
+      parameters:
+      - description: category id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      tags:
+      - admin-categories
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: category id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CategoryResponse'
+              type: object
+      tags:
+      - admin-categories
+  /admin/import:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ImportLogResponse'
+                  type: array
+              type: object
+      summary: Import job history
+      tags:
+      - admin-import
+  /admin/import/{id}:
+    get:
+      parameters:
+      - description: import log id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ImportLogResponse'
+              type: object
+      summary: Poll an import job's progress
+      tags:
+      - admin-import
+  /admin/import/{id}/commit:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: import log id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ImportLogResponse'
+              type: object
+      summary: Start the actual import for a previously uploaded/validated file
+      tags:
+      - admin-import
+  /admin/import/{id}/stream:
+    get:
+      parameters:
+      - description: import log id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - text/event-stream
+      responses: {}
+      summary: Server-Sent Events progress stream for an import job
+      tags:
+      - admin-import
+  /admin/import/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: xlsx, xls, or csv (Book, Chapter, Verse, text_en, text_id, title_en,
+          title_id)
+        in: formData
+        name: file
+        required: true
+        type: file
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ImportPreviewResponse'
+              type: object
+      summary: Upload an Excel/CSV file and get a validation preview
+      tags:
+      - admin-import
+  /admin/languages:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.LanguageResponse'
+                  type: array
+              type: object
+      tags:
+      - admin-languages
+    post:
+      consumes:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.LanguageResponse'
+              type: object
+      tags:
+      - admin-languages
+  /admin/languages/{id}:
+    delete:
+      parameters:
+      - description: language id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      tags:
+      - admin-languages
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: language id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.LanguageResponse'
+              type: object
+      tags:
+      - admin-languages
+  /admin/stats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.DashboardStats'
+              type: object
+      summary: Admin dashboard summary counters
+      tags:
+      - admin-stats
+  /admin/users:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.UserResponse'
+                  type: array
+              type: object
+      tags:
+      - admin-users
+  /admin/users/{id}:
+    delete:
+      parameters:
+      - description: user id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      tags:
+      - admin-users
+  /admin/users/{id}/role:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: user id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      tags:
+      - admin-users
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Envelope'
+      summary: Log in and receive httpOnly session cookies
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Revoke the current refresh token and clear session cookies
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Envelope'
+      summary: Rotate the refresh token and issue a new access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Registration payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Envelope'
+      summary: Register a new reader account
+      tags:
+      - auth
+  /bookmarks:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: bookmark
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateBookmarkRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BookmarkResponse'
+              type: object
+      summary: Create a bookmark (verse or PDF page)
+      tags:
+      - bookmarks
+  /bookmarks/{id}:
+    delete:
+      parameters:
+      - description: bookmark id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a bookmark
+      tags:
+      - bookmarks
+  /bookmarks/last-position:
+    put:
+      consumes:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Save/update the "remember last page" auto-bookmark
+      tags:
+      - bookmarks
+  /books:
+    get:
+      parameters:
+      - description: pagination cursor
+        in: query
+        name: cursor
+        type: string
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      - description: filter by category
+        in: query
+        name: category_id
+        type: integer
+      - description: filter by language
+        in: query
+        name: language_id
+        type: integer
+      - description: title/author search
+        in: query
+        name: q
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.BookResponse'
+                  type: array
+              type: object
+      summary: List published books (Home grid)
+      tags:
+      - books
+  /books/{id}/bookmarks:
+    get:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.BookmarkResponse'
+                  type: array
+              type: object
+      summary: List the user's bookmarks for a book
+      tags:
+      - bookmarks
+  /books/{id}/chapters:
+    get:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ChapterResponse'
+                  type: array
+              type: object
+      summary: List a book's chapters (reader's left panel)
+      tags:
+      - books
+  /books/{id}/chapters/{number}:
+    get:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: chapter number
+        in: path
+        name: number
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ChapterContentResponse'
+              type: object
+      summary: 'Chapter content: sections + verses (reader''s center panel)'
+      tags:
+      - books
+  /books/{id}/favorite:
+    delete:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Unfavorite a book
+      tags:
+      - favorites
+    post:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Favorite a book
+      tags:
+      - favorites
+  /books/{id}/last-position:
+    get:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BookmarkResponse'
+              type: object
+      summary: Get the "remember last page" position for a book
+      tags:
+      - bookmarks
+  /books/{id}/notes:
+    get:
+      parameters:
+      - description: book id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.NoteResponse'
+                  type: array
+              type: object
+      summary: List the user's notes for a book
+      tags:
+      - notes
+  /books/{slug}:
+    get:
+      parameters:
+      - description: book slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.BookResponse'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Envelope'
+      summary: Book detail page
+      tags:
+      - books
+  /books/popular:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.BookResponse'
+                  type: array
+              type: object
+      summary: Most-viewed published books, for the Home page "Popular" rail
+      tags:
+      - books
+  /me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
+      summary: Current authenticated user's profile
+      tags:
+      - auth
+  /me/favorites:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.BookResponse'
+                  type: array
+              type: object
+      summary: List the current user's favorite books
+      tags:
+      - favorites
+  /notes:
+    post:
+      consumes:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.NoteResponse'
+              type: object
+      summary: Create a note on a book or verse
+      tags:
+      - notes
+  /notes/{id}:
+    delete:
+      parameters:
+      - description: note id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a note
+      tags:
+      - notes
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: note id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.NoteResponse'
+              type: object
+      summary: Edit a note
+      tags:
+      - notes
+  /search/books:
+    get:
+      parameters:
+      - description: search query
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.BookResponse'
+                  type: array
+              type: object
+      summary: Full-text search across book title/author/description
+      tags:
+      - search
+  /search/verses:
+    get:
+      parameters:
+      - description: search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - description: restrict to one book
+        in: query
+        name: book_id
+        type: integer
+      - description: pagination cursor
+        in: query
+        name: cursor
+        type: string
+      - description: page size
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Envelope'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.SearchVerseHitResponse'
+                  type: array
+              type: object
+      summary: Full-text search across verse text (EN + ID) and titles
+      tags:
+      - search
+securityDefinitions:
+  CookieAuth:
+    description: JWT access token, set as an httpOnly cookie by /auth/login.
+    in: cookie
+    name: access_token
+    type: apiKey
+swagger: "2.0"

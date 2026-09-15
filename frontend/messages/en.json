@@ -1,0 +1,136 @@
+{
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "favorites": "Favorites",
+    "admin": "Admin",
+    "login": "Log in",
+    "logout": "Log out",
+    "register": "Create account"
+  },
+  "home": {
+    "title": "Discover books to read",
+    "subtitle": "Bible-style texts, novels, and references — read online or as PDF.",
+    "popular": "Popular",
+    "allBooks": "All books",
+    "filterCategory": "Category",
+    "filterLanguage": "Language",
+    "searchPlaceholder": "Search books, verses, or authors...",
+    "noResults": "No books found.",
+    "loadMore": "Load more"
+  },
+  "book": {
+    "read": "Read",
+    "openPdf": "Open PDF",
+    "downloadPdf": "Download PDF",
+    "favorite": "Favorite",
+    "unfavorite": "Remove favorite",
+    "share": "Share",
+    "chapters": "chapters",
+    "verses": "verses",
+    "by": "by {author}",
+    "description": "Description",
+    "notFound": "This book could not be found."
+  },
+  "reader": {
+    "chapters": "Chapters",
+    "bookmarks": "Bookmarks",
+    "notes": "Notes",
+    "search": "Search in book",
+    "fontSize": "Font size",
+    "compareTranslation": "Compare translation",
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "highlight": "Highlight",
+    "share": "Share verse",
+    "addBookmark": "Add bookmark",
+    "addNote": "Add note",
+    "notePlaceholder": "Write a note...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "emptyBookmarks": "No bookmarks yet.",
+    "emptyNotes": "No notes yet."
+  },
+  "pdf": {
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fullscreen": "Fullscreen",
+    "search": "Search in document",
+    "page": "Page",
+    "of": "of",
+    "darkMode": "Dark mode",
+    "bookmarkPage": "Bookmark this page"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search verses, chapters, and books...",
+    "booksTab": "Books",
+    "versesTab": "Verses",
+    "noResults": "No results for \"{query}\".",
+    "resultsCount": "{count, plural, =0 {No results} one {# result} other {# results}}"
+  },
+  "auth": {
+    "loginTitle": "Log in to your account",
+    "registerTitle": "Create an account",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "submitLogin": "Log in",
+    "submitRegister": "Create account",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "invalidCredentials": "Invalid email or password."
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "books": "Books",
+    "import": "Import",
+    "categories": "Categories",
+    "languages": "Languages",
+    "users": "Users",
+    "auditLog": "Audit log",
+    "stats": {
+      "totalBooks": "Total books",
+      "publishedBooks": "Published",
+      "totalChapters": "Chapters",
+      "totalVerses": "Verses",
+      "totalUsers": "Users",
+      "importsLast30Day": "Imports (30d)"
+    },
+    "import_": {
+      "upload": "Upload file",
+      "uploadHint": "xlsx, xls, or csv with Book, Chapter, Verse, text_en, text_id, title_en, title_id columns",
+      "preview": "Preview",
+      "commit": "Start import",
+      "history": "Import history",
+      "rowsTotal": "Total rows",
+      "distinctBooks": "Books",
+      "distinctChapters": "Chapters",
+      "validationErrors": "Validation errors",
+      "mode": "Import mode",
+      "modeInsert": "Insert only (skip duplicates)",
+      "modeUpsert": "Insert and update existing",
+      "status": {
+        "pending": "Pending",
+        "validating": "Validating",
+        "ready": "Ready",
+        "importing": "Importing",
+        "completed": "Completed",
+        "failed": "Failed",
+        "rolled_back": "Rolled back"
+      }
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong.",
+    "retry": "Retry",
+    "close": "Close",
+    "back": "Back",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "actions": "Actions"
+  }
+}
