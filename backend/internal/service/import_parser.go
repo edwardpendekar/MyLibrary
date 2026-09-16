@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -141,6 +142,11 @@ type csvRowReader struct {
 }
 
 func newCSVRowReader(r io.ReadSeeker) (*csvRowReader, error) {
+	delimiter, err := detectCSVDelimiter(r)
+	if err != nil {
+		return nil, fmt.Errorf("detect delimiter: %w", err)
+	}
+
 	total, err := countCSVDataRows(r)
 	if err != nil {
 		return nil, err
@@ -150,6 +156,7 @@ func newCSVRowReader(r io.ReadSeeker) (*csvRowReader, error) {
 	}
 
 	cr := csv.NewReader(bufio.NewReaderSize(r, 64*1024))
+	cr.Comma = delimiter
 	cr.ReuseRecord = true
 	headerCells, err := cr.Read()
 	if err != nil {
@@ -161,6 +168,32 @@ func newCSVRowReader(r io.ReadSeeker) (*csvRowReader, error) {
 	}
 
 	return &csvRowReader{reader: cr, header: header, total: total, rowNumber: 1}, nil
+}
+
+// detectCSVDelimiter picks between comma and semicolon by counting which one
+// appears more often in the header line. Semicolon-delimited CSV is the
+// default export format for Excel under many non-US regional settings
+// (where comma is already the decimal separator) — without this, those
+// files fail with a cryptic "extraneous ... in quoted-field" error, since
+// the whole header ends up parsed as one quoted field.
+func detectCSVDelimiter(r io.ReadSeeker) (rune, error) {
+	buf := make([]byte, 4096)
+	n, err := r.Read(buf)
+	if err != nil && err != io.EOF {
+		return ',', err
+	}
+	if _, err := r.Seek(0, io.SeekStart); err != nil {
+		return ',', fmt.Errorf("rewind file: %w", err)
+	}
+
+	firstLine := buf[:n]
+	if idx := bytes.IndexAny(firstLine, "\r\n"); idx != -1 {
+		firstLine = firstLine[:idx]
+	}
+	if bytes.Count(firstLine, []byte{';'}) > bytes.Count(firstLine, []byte{','}) {
+		return ';', nil
+	}
+	return ',', nil
 }
 
 func countCSVDataRows(r io.ReadSeeker) (int, error) {

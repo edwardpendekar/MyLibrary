@@ -106,3 +106,50 @@ func TestCSVRowReader_MissingBookIsRowError(t *testing.T) {
 		t.Errorf("expected empty book to be a row error, got row=%+v rowErr=%v", row, rowErr)
 	}
 }
+
+// Semicolon-delimited CSV is Excel's default export under many non-US
+// regional settings (e.g. Indonesian, German) — a real file in this format
+// was reported failing with a cryptic "extraneous ... in quoted-field" error
+// before delimiter auto-detection was added.
+func TestCSVRowReader_SemicolonDelimited(t *testing.T) {
+	csv := "\"id\";\"book\";\"chapter\";\"verse\";\"text_en\";\"text_id\";\"title_en\";\"title_id\"\r\n" +
+		"\"10\";\"Irenaeus 4\";\"1\";\"1\";\"Preface, part one\";\"Kata pengantar\";\"Intro\";\"Pendahuluan\"\r\n"
+
+	reader, err := NewRowReader(".csv", strings.NewReader(csv))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer reader.Close()
+
+	row, rowErr, hasMore, err := reader.Next()
+	if err != nil || rowErr != nil || !hasMore {
+		t.Fatalf("unexpected result: row=%v rowErr=%v hasMore=%v err=%v", row, rowErr, hasMore, err)
+	}
+	if row.Book != "Irenaeus 4" || row.Chapter != 1 || row.Verse != 1 {
+		t.Errorf("unexpected row values: %+v", row)
+	}
+	// A comma inside a quoted field must survive untouched now that ';' is
+	// the actual field separator, not be mistaken for another delimiter.
+	if row.TextEN != "Preface, part one" {
+		t.Errorf("expected comma-containing text to be preserved, got %q", row.TextEN)
+	}
+}
+
+func TestCSVRowReader_CommaDelimitedStillWorksAlongsideSemicolon(t *testing.T) {
+	csv := "book,chapter,verse,text_en,text_id,title_en,title_id\n" +
+		"Genesis,1,1,In the beginning,Pada mulanya,Creation,Penciptaan\n"
+
+	reader, err := NewRowReader(".csv", strings.NewReader(csv))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer reader.Close()
+
+	row, rowErr, hasMore, err := reader.Next()
+	if err != nil || rowErr != nil || !hasMore {
+		t.Fatalf("unexpected result: row=%v rowErr=%v hasMore=%v err=%v", row, rowErr, hasMore, err)
+	}
+	if row.Book != "Genesis" {
+		t.Errorf("expected comma-delimited files to still parse, got %+v", row)
+	}
+}
