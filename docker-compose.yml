@@ -49,6 +49,11 @@ services:
   backend:
     build:
       context: ./backend
+    # Also tags local builds with this name, and lets a deploy that never
+    # wants to build from source (see docs/deployment.md) do
+    # `docker compose pull backend && docker compose up -d backend` instead —
+    # CI publishes this same tag on every push to main.
+    image: ghcr.io/edwardpendekar/mylibrary-backend:latest
     restart: unless-stopped
     depends_on:
       postgres:
@@ -97,6 +102,9 @@ services:
         # origin, so this is intentionally empty rather than a backend URL.
         NEXT_PUBLIC_BACKEND_ORIGIN: ""
         NEXT_PUBLIC_ASSET_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost}
+    # See the same note on `backend` above — CI publishes this tag (baked
+    # with NEXT_PUBLIC_ASSET_ORIGIN=https://books.rbp01.online) on every push.
+    image: ghcr.io/edwardpendekar/mylibrary-frontend:latest
     restart: unless-stopped
     depends_on:
       - backend

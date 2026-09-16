@@ -37,6 +37,33 @@ This brings up `postgres`, `redis`, a one-shot `migrate` job, `backend`,
 cross-origin request — no CORS preflight, and cookies flow without any
 `SameSite` complications.
 
+### Deploying to a small/shared VPS: pull, don't build
+
+`docker compose up -d --build` is fine on a dev machine or a CI runner, but
+**avoid `--build` on a resource-constrained box** (1 vCPU / ~2GB RAM is common
+on budget VPS plans, and doubly so if it already hosts other apps). The
+Next.js production build in particular is CPU- and memory-hungry enough that
+running it there can push the whole host into swap thrashing — severely
+enough, in practice, to make SSH itself stop responding for several minutes
+and take unrelated apps on the same box down with it, even though nothing
+was actually misconfigured.
+
+CI (`.github/workflows/ci.yml`) builds both images on every push to `main`
+and publishes them to GitHub Container Registry as
+`ghcr.io/edwardpendekar/mylibrary-backend:latest` and
+`.../mylibrary-frontend:latest` — `docker-compose.yml` already references
+these via `image:` alongside each service's `build:` block. So a deploy is:
+
+```bash
+cd /path/to/BookReader && git pull origin main
+docker compose pull backend frontend   # fetch pre-built images, no local compile
+docker compose up -d
+```
+
+`docker compose build` still works exactly as before for local development —
+`image:` only takes effect when you *don't* pass `--build`, so `pull` is what
+actually skips the from-source build.
+
 ### ⚠️ `PUBLIC_ORIGIN` must exactly match what the browser sees
 
 The backend's CORS check compares the browser's `Origin` header against
