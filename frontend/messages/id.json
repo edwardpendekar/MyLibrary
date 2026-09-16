@@ -35,6 +35,7 @@
   },
   "reader": {
     "chapters": "Daftar Pasal",
+    "chapterNumber": "Pasal {number}",
     "bookmarks": "Markah",
     "notes": "Catatan",
     "search": "Cari dalam buku",

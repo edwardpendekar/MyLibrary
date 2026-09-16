@@ -35,6 +35,7 @@
   },
   "reader": {
     "chapters": "Chapters",
+    "chapterNumber": "Chapter {number}",
     "bookmarks": "Bookmarks",
     "notes": "Notes",
     "search": "Search in book",

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useChapterContent } from "@/hooks/use-books";
 import { useSaveLastPosition } from "@/hooks/use-bookmarks";
 import { useHighlights, useToggleHighlight } from "@/hooks/use-highlights";
 import { useAuthStore } from "@/store/auth-store";
-import { useReaderPreferencesStore } from "@/store/reader-preferences-store";
+import { useReaderPreferencesStore, type ReaderTranslation } from "@/store/reader-preferences-store";
 import { ReaderToolbar } from "@/features/reader/components/reader-toolbar";
 import { VerseItem } from "@/features/reader/components/verse-item";
 import { AddNoteDialog } from "@/features/reader/components/add-note-dialog";
@@ -21,6 +22,7 @@ export function VerseReader({
   bookSlug: string;
   chapterNumber: number;
 }) {
+  const t = useTranslations("reader");
   const { data, isPending } = useChapterContent(bookId, chapterNumber);
   const { fontSize, translation } = useReaderPreferencesStore();
   const user = useAuthStore((s) => s.user);
@@ -57,34 +59,52 @@ export function VerseReader({
       <ReaderToolbar />
       <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8">
         <h1 className="mb-6 text-2xl font-bold">
-          {data.chapter.title_en ?? `Chapter ${chapterNumber}`}
+          {pickLocalizedTitle(data.chapter.title_en, data.chapter.title_id, translation) ??
+            t("chapterNumber", { number: chapterNumber })}
         </h1>
-        {versesBySection.map(({ section, verses }) => (
-          <section key={section?.id ?? "no-section"} className="mb-8">
-            {section?.title_en && <h2 className="mb-3 text-lg font-semibold text-primary">{section.title_en}</h2>}
-            <div className="space-y-1">
-              {verses.map((verse) => (
-                <VerseItem
-                  key={verse.id}
-                  verse={verse}
-                  bookId={bookId}
-                  bookSlug={bookSlug}
-                  chapterNumber={chapterNumber}
-                  translation={translation}
-                  fontSize={fontSize}
-                  onAddNote={setNoteVerseId}
-                  highlightedVerseIds={user ? highlightedVerseIds : undefined}
-                  onToggleHighlight={(verseId, highlighted) => toggleHighlight.mutate({ verseId, highlighted })}
-                />
-              ))}
-            </div>
-          </section>
-        ))}
+        {versesBySection.map(({ section, verses }) => {
+          const sectionTitle = pickLocalizedTitle(section?.title_en, section?.title_id, translation);
+          return (
+            <section key={section?.id ?? "no-section"} className="mb-8">
+              {sectionTitle && <h2 className="mb-3 text-lg font-semibold text-primary">{sectionTitle}</h2>}
+              <div className="space-y-1">
+                {verses.map((verse) => (
+                  <VerseItem
+                    key={verse.id}
+                    verse={verse}
+                    bookId={bookId}
+                    bookSlug={bookSlug}
+                    chapterNumber={chapterNumber}
+                    translation={translation}
+                    fontSize={fontSize}
+                    onAddNote={setNoteVerseId}
+                    highlightedVerseIds={user ? highlightedVerseIds : undefined}
+                    onToggleHighlight={(verseId, highlighted) => toggleHighlight.mutate({ verseId, highlighted })}
+                  />
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
 
       <AddNoteDialog bookId={bookId} verseId={noteVerseId} onOpenChange={(open) => !open && setNoteVerseId(null)} />
     </div>
   );
+}
+
+/**
+ * Chapter/section titles follow the same EN/ID/both reading preference as
+ * verse text — "both" prefers Indonesian first since that's this app's
+ * primary audience, falling back to whichever language is actually present.
+ */
+function pickLocalizedTitle(
+  titleEn: string | null | undefined,
+  titleId: string | null | undefined,
+  translation: ReaderTranslation
+): string | null {
+  if (translation === "en") return titleEn || titleId || null;
+  return titleId || titleEn || null;
 }
 
 function groupBySection<

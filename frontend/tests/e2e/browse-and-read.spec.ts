@@ -26,7 +26,9 @@ test.describe("Browse and read", () => {
     await page.goto("/en/books/genesis/read/1");
 
     await expect(page.getByText("In the beginning")).toBeVisible();
-    await expect(page.getByText("Creation")).toBeVisible();
+    // Chapter/section titles default to Indonesian first (the reader
+    // translation toggle's "both" mode), same as verse text below.
+    await expect(page.getByText("Penciptaan")).toBeVisible();
     // Bilingual side-by-side text is on by default.
     await expect(page.getByText("Pada mulanya")).toBeVisible();
   });
