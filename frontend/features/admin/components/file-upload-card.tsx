@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import Image from "next/image";
 import { FileText, Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ export function FileUploadCard({
   isUploading?: boolean;
   onSelect: (file: File) => void;
 }) {
+  const t = useTranslations("admin.fileUpload");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
@@ -38,7 +40,7 @@ export function FileUploadCard({
         {currentUrl && !isImage && (
           <a href={currentUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
             <FileText className="size-4" />
-            View current file
+            {t("viewCurrentFile")}
           </a>
         )}
         <input
@@ -54,7 +56,7 @@ export function FileUploadCard({
         />
         <Button type="button" variant="outline" size="sm" disabled={isUploading} onClick={() => inputRef.current?.click()}>
           <Upload className="size-4" />
-          {isUploading ? "Uploading..." : "Upload"}
+          {isUploading ? t("uploading") : t("upload")}
         </Button>
       </CardContent>
     </Card>

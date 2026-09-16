@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { z } from "zod";
 
 import {
@@ -48,6 +49,7 @@ export function BookForm({
   onSubmit: (input: UpsertBookInput) => void;
   isSubmitting?: boolean;
 }) {
+  const t = useTranslations("admin.booksPage.form");
   const { data: languages } = useAdminLanguages();
   const { data: categories } = useAdminCategories();
 
@@ -86,7 +88,7 @@ export function BookForm({
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title</FormLabel>
+              <FormLabel>{t("title")}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -99,7 +101,7 @@ export function BookForm({
           name="author"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Author</FormLabel>
+              <FormLabel>{t("author")}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -112,7 +114,7 @@ export function BookForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>{t("description")}</FormLabel>
               <FormControl>
                 <Textarea rows={3} {...field} />
               </FormControl>
@@ -127,11 +129,11 @@ export function BookForm({
             name="language_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Language</FormLabel>
+                <FormLabel>{t("language")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select language" />
+                      <SelectValue placeholder={t("selectLanguage")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -150,11 +152,11 @@ export function BookForm({
             name="category_id"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
+                <FormLabel>{t("category")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t("selectCategory")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -176,7 +178,7 @@ export function BookForm({
             name="year"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Year</FormLabel>
+                <FormLabel>{t("year")}</FormLabel>
                 <FormControl>
                   <Input type="number" {...field} />
                 </FormControl>
@@ -189,7 +191,7 @@ export function BookForm({
             name="isbn"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>ISBN</FormLabel>
+                <FormLabel>{t("isbn")}</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -205,7 +207,7 @@ export function BookForm({
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>{t("status")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className="w-full">
@@ -213,9 +215,9 @@ export function BookForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    <SelectItem value="draft">{t("statusDraft")}</SelectItem>
+                    <SelectItem value="published">{t("statusPublished")}</SelectItem>
+                    <SelectItem value="archived">{t("statusArchived")}</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>
@@ -224,7 +226,7 @@ export function BookForm({
         )}
 
         <Button type="submit" disabled={isSubmitting}>
-          {book ? "Save changes" : "Create book"}
+          {book ? t("saveChanges") : t("createBook")}
         </Button>
       </form>
     </Form>

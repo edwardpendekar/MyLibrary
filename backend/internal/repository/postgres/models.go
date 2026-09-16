@@ -87,6 +87,24 @@ func (m refreshTokenModel) toDomain() *domain.RefreshToken {
 	}
 }
 
+type passwordResetTokenModel struct {
+	ID        int64      `gorm:"primaryKey"`
+	UserID    int64      `gorm:"column:user_id"`
+	TokenHash string     `gorm:"column:token_hash"`
+	ExpiresAt time.Time  `gorm:"column:expires_at"`
+	UsedAt    *time.Time `gorm:"column:used_at"`
+	CreatedAt time.Time  `gorm:"column:created_at"`
+}
+
+func (passwordResetTokenModel) TableName() string { return "password_reset_tokens" }
+
+func (m passwordResetTokenModel) toDomain() *domain.PasswordResetToken {
+	return &domain.PasswordResetToken{
+		ID: m.ID, UserID: m.UserID, TokenHash: m.TokenHash,
+		ExpiresAt: m.ExpiresAt, UsedAt: m.UsedAt, CreatedAt: m.CreatedAt,
+	}
+}
+
 type sessionModel struct {
 	ID             int64      `gorm:"primaryKey"`
 	UserID         int64      `gorm:"column:user_id"`
@@ -354,6 +372,15 @@ type favoriteModel struct {
 }
 
 func (favoriteModel) TableName() string { return "favorites" }
+
+type highlightModel struct {
+	ID        int64     `gorm:"primaryKey"`
+	UserID    int64     `gorm:"column:user_id"`
+	VerseID   int64     `gorm:"column:verse_id"`
+	CreatedAt time.Time `gorm:"column:created_at"`
+}
+
+func (highlightModel) TableName() string { return "highlights" }
 
 type bookmarkModel struct {
 	ID        int64     `gorm:"primaryKey"`

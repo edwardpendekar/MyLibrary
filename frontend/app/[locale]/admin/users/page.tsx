@@ -1,6 +1,7 @@
 "use client";
 
 import { Ban } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,23 +19,25 @@ import { useAdminUsers, useChangeUserRole, useDeactivateUser } from "@/hooks/adm
 const ROLES = ["admin", "editor", "user", "guest"];
 
 export default function AdminUsersPage() {
+  const t = useTranslations("admin.usersPage");
+  const tCommon = useTranslations("common");
   const { data: users, isPending } = useAdminUsers();
   const changeRole = useChangeUserRole();
   const deactivate = useDeactivateUser();
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Users</h1>
+      <h1 className="text-2xl font-bold">{t("title")}</h1>
 
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("colName")}</TableHead>
+              <TableHead>{t("colEmail")}</TableHead>
+              <TableHead>{t("colRole")}</TableHead>
+              <TableHead>{t("colStatus")}</TableHead>
+              <TableHead className="text-right">{tCommon("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -70,7 +73,7 @@ export default function AdminUsersPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={u.is_active ? "default" : "secondary"}>
-                      {u.is_active ? "active" : "inactive"}
+                      {u.is_active ? t("active") : t("inactive")}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">

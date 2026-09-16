@@ -1,25 +1,28 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuditLogs } from "@/hooks/admin/use-admin-audit";
 
 export default function AdminAuditLogPage() {
+  const t = useTranslations("admin.auditLogPage");
   const { data: logs, isPending } = useAuditLogs();
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Audit log</h1>
+      <h1 className="text-2xl font-bold">{t("title")}</h1>
 
       <div className="rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>When</TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead>Entity</TableHead>
-              <TableHead>IP</TableHead>
+              <TableHead>{t("colWhen")}</TableHead>
+              <TableHead>{t("colAction")}</TableHead>
+              <TableHead>{t("colEntity")}</TableHead>
+              <TableHead>{t("colIp")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -50,7 +53,7 @@ export default function AdminAuditLogPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  No entries yet.
+                  {t("noEntries")}
                 </TableCell>
               </TableRow>
             )}

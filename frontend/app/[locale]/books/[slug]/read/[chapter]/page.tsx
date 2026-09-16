@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/api-error";
 import { ChapterList } from "@/features/reader/components/chapter-list";
 import { VerseReader } from "@/features/reader/components/verse-reader";
 import { RightPanel } from "@/features/reader/components/right-panel";
+import { ReaderMobileNav } from "@/features/reader/components/reader-mobile-nav";
 import type { Book } from "@/types/api";
 
 export default async function ReaderPage({
@@ -30,8 +31,11 @@ export default async function ReaderPage({
         <ChapterList bookId={book.id} bookSlug={book.slug} activeChapter={chapterNumber} />
       </aside>
 
-      <main className="min-w-0">
-        <VerseReader bookId={book.id} bookSlug={book.slug} chapterNumber={chapterNumber} />
+      <main className="flex min-w-0 flex-col">
+        <ReaderMobileNav bookId={book.id} bookSlug={book.slug} activeChapter={chapterNumber} />
+        <div className="min-h-0 flex-1">
+          <VerseReader bookId={book.id} bookSlug={book.slug} chapterNumber={chapterNumber} />
+        </div>
       </main>
 
       <aside className="hidden border-l lg:block">

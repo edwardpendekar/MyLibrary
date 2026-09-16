@@ -33,6 +33,13 @@ type RefreshTokenRepository interface {
 	RevokeAllForUser(ctx context.Context, userID int64) error
 }
 
+type PasswordResetTokenRepository interface {
+	Create(ctx context.Context, t *PasswordResetToken) error
+	FindByHash(ctx context.Context, hash string) (*PasswordResetToken, error)
+	MarkUsed(ctx context.Context, id int64) error
+	InvalidateAllForUser(ctx context.Context, userID int64) error
+}
+
 type SessionRepository interface {
 	Create(ctx context.Context, s *Session) error
 	ListActiveForUser(ctx context.Context, userID int64) ([]Session, error)
@@ -150,6 +157,15 @@ type BookmarkRepository interface {
 	ListByUserAndBook(ctx context.Context, userID, bookID int64) ([]Bookmark, error)
 	UpsertLastPosition(ctx context.Context, b *Bookmark) error
 	FindLastPosition(ctx context.Context, userID, bookID int64) (*Bookmark, error)
+}
+
+type HighlightRepository interface {
+	Add(ctx context.Context, userID, verseID int64) error
+	Remove(ctx context.Context, userID, verseID int64) error
+	// ListVerseIDsByUserAndBook returns every verse in bookID this user has
+	// highlighted — exactly what the reader needs to know which verses to
+	// render highlighted when a chapter loads.
+	ListVerseIDsByUserAndBook(ctx context.Context, userID, bookID int64) ([]int64, error)
 }
 
 type NoteRepository interface {

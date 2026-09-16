@@ -21,6 +21,8 @@ type Config struct {
 	Storage
 	CORS
 	RateLimit
+	SMTP
+	FrontendURL string
 }
 
 type Server struct {
@@ -72,7 +74,18 @@ type CORS struct {
 }
 
 type RateLimit struct {
-	RequestsPerMinute int
+	RequestsPerMinute     int
+	AuthRequestsPerMinute int
+}
+
+// SMTP is optional: when Host is empty, the app falls back to a console mailer
+// that logs the reset link instead of emailing it (fine for local dev).
+type SMTP struct {
+	Host     string
+	Port     int
+	Username string
+	Password string
+	From     string
 }
 
 // Load reads a .env file if present (local dev convenience; ignored in
@@ -126,8 +139,17 @@ func Load() (*Config, error) {
 			AllowedOrigins: splitCSV(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")),
 		},
 		RateLimit: RateLimit{
-			RequestsPerMinute: getInt("RATE_LIMIT_RPM", 120),
+			RequestsPerMinute:     getInt("RATE_LIMIT_RPM", 120),
+			AuthRequestsPerMinute: getInt("RATE_LIMIT_AUTH_RPM", 10),
 		},
+		SMTP: SMTP{
+			Host:     getEnv("SMTP_HOST", ""),
+			Port:     getInt("SMTP_PORT", 587),
+			Username: getEnv("SMTP_USERNAME", ""),
+			Password: getEnv("SMTP_PASSWORD", ""),
+			From:     getEnv("SMTP_FROM", "no-reply@bookreader.local"),
+		},
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 	}
 
 	if cfg.JWT.AccessSecret == "" {

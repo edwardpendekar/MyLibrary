@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 
 import { BookForm } from "@/features/admin/components/book-form";
@@ -18,6 +19,8 @@ export default function AdminBookEditPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = useTranslations("admin.booksPage");
+  const tFile = useTranslations("admin.fileUpload");
   const { id } = use(params);
   const bookId = Number(id);
   const router = useRouter();
@@ -32,7 +35,7 @@ export default function AdminBookEditPage({
   }
 
   if (!book) {
-    return <p className="text-muted-foreground">Book not found.</p>;
+    return <p className="text-muted-foreground">{t("bookNotFound")}</p>;
   }
 
   return (
@@ -41,7 +44,7 @@ export default function AdminBookEditPage({
 
       <div className="grid grid-cols-2 gap-4">
         <FileUploadCard
-          title="Cover image"
+          title={tFile("coverTitle")}
           accept="image/jpeg,image/png,image/webp"
           currentUrl={book.cover_url}
           isImage
@@ -49,7 +52,7 @@ export default function AdminBookEditPage({
           onSelect={(file) => uploadCover.mutate(file)}
         />
         <FileUploadCard
-          title="PDF ebook"
+          title={tFile("pdfTitle")}
           accept="application/pdf"
           currentUrl={book.pdf_url}
           isUploading={uploadPdf.isPending}

@@ -12,10 +12,13 @@ export function ChapterList({
   bookId,
   bookSlug,
   activeChapter,
+  onNavigate,
 }: {
   bookId: number;
   bookSlug: string;
   activeChapter: number;
+  /** Fired when a chapter link is clicked — lets the mobile sheet close itself. */
+  onNavigate?: () => void;
 }) {
   const t = useTranslations("reader");
   const { data: chapters, isPending } = useChapters(bookId);
@@ -39,6 +42,7 @@ export function ChapterList({
             <Link
               key={chapter.id}
               href={`/books/${bookSlug}/read/${chapter.number}`}
+              onClick={onNavigate}
               className={cn(
                 "flex h-9 items-center justify-center rounded-md text-sm hover:bg-muted",
                 chapter.number === activeChapter && "bg-primary text-primary-foreground hover:bg-primary/90"

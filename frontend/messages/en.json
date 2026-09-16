@@ -59,7 +59,9 @@
     "page": "Page",
     "of": "of",
     "darkMode": "Dark mode",
-    "bookmarkPage": "Bookmark this page"
+    "bookmarkPage": "Bookmark this page",
+    "previousMatch": "Previous match",
+    "nextMatch": "Next match"
   },
   "search": {
     "title": "Search",
@@ -79,7 +81,19 @@
     "submitRegister": "Create account",
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
-    "invalidCredentials": "Invalid email or password."
+    "invalidCredentials": "Invalid email or password.",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordTitle": "Reset your password",
+    "forgotPasswordHint": "Enter the email address on your account and we'll send you a link to reset your password.",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "If an account exists for that email, a reset link has been sent.",
+    "backToLogin": "Back to log in",
+    "resetPasswordTitle": "Choose a new password",
+    "newPassword": "New password",
+    "resetPassword": "Reset password",
+    "resetPasswordSuccess": "Your password has been reset. You can now log in.",
+    "resetPasswordInvalid": "This reset link is invalid or has expired.",
+    "requestNewLink": "Request a new link"
   },
   "admin": {
     "dashboard": "Dashboard",
@@ -118,7 +132,105 @@
         "completed": "Completed",
         "failed": "Failed",
         "rolled_back": "Rolled back"
+      },
+      "chooseFile": "Choose file",
+      "validating": "Validating...",
+      "errors": "Errors",
+      "row": "Row",
+      "book": "Book",
+      "ch": "Ch",
+      "vs": "Vs",
+      "processed": "Processed",
+      "verses": "Verses",
+      "inserted": "inserted",
+      "updated": "updated",
+      "skipped": "skipped",
+      "colFile": "File",
+      "colStatus": "Status",
+      "colRows": "Rows",
+      "colInserted": "Inserted",
+      "colUpdated": "Updated",
+      "colSkipped": "Skipped",
+      "colCreated": "Created",
+      "noImportsYet": "No imports yet.",
+      "uploadTitle": "Upload Excel/CSV file",
+      "uploadColumnsHint": "Columns: Book, Chapter, Verse, text_en, text_id, title_en, title_id",
+      "statusLabel": "Status",
+      "booksCreated": "Books",
+      "chaptersCreated": "Chapters",
+      "sectionsCreated": "Sections"
+    },
+    "fileUpload": {
+      "coverTitle": "Cover image",
+      "pdfTitle": "PDF ebook",
+      "viewCurrentFile": "View current file",
+      "upload": "Upload",
+      "uploading": "Uploading..."
+    },
+    "booksPage": {
+      "newBook": "New book",
+      "searchPlaceholder": "Search books...",
+      "colTitle": "Title",
+      "colStatus": "Status",
+      "colChapters": "Chapters",
+      "colVerses": "Verses",
+      "colActions": "Actions",
+      "noBooks": "No books yet.",
+      "confirmDelete": "Delete \"{title}\"?",
+      "bookNotFound": "Book not found.",
+      "form": {
+        "title": "Title",
+        "author": "Author",
+        "description": "Description",
+        "language": "Language",
+        "category": "Category",
+        "selectLanguage": "Select language",
+        "selectCategory": "Select category",
+        "year": "Year",
+        "isbn": "ISBN",
+        "status": "Status",
+        "statusDraft": "Draft",
+        "statusPublished": "Published",
+        "statusArchived": "Archived",
+        "saveChanges": "Save changes",
+        "createBook": "Create book"
       }
+    },
+    "categoriesPage": {
+      "title": "Categories",
+      "newCategory": "New category",
+      "colSlug": "Slug",
+      "colNameEn": "Name (EN)",
+      "colNameId": "Name (ID)",
+      "nameEnLabel": "Name (English)",
+      "nameIdLabel": "Name (Indonesian)"
+    },
+    "languagesPage": {
+      "title": "Languages",
+      "newLanguage": "New language",
+      "colCode": "Code",
+      "colName": "Name",
+      "colNativeName": "Native name",
+      "codeLabel": "Code (e.g. fr)",
+      "nameLabel": "Name (English)",
+      "nativeNameLabel": "Native name"
+    },
+    "usersPage": {
+      "title": "Users",
+      "colName": "Name",
+      "colEmail": "Email",
+      "colRole": "Role",
+      "colStatus": "Status",
+      "active": "active",
+      "inactive": "inactive"
+    },
+    "auditLogPage": {
+      "title": "Audit log",
+      "colWhen": "When",
+      "colAction": "Action",
+      "colEntity": "Entity",
+      "colIp": "IP",
+      "noEntries": "No entries yet."
     }
   },
   "common": {

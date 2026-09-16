@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useChapterContent } from "@/hooks/use-books";
 import { useSaveLastPosition } from "@/hooks/use-bookmarks";
+import { useHighlights, useToggleHighlight } from "@/hooks/use-highlights";
 import { useAuthStore } from "@/store/auth-store";
 import { useReaderPreferencesStore } from "@/store/reader-preferences-store";
 import { ReaderToolbar } from "@/features/reader/components/reader-toolbar";
@@ -24,6 +25,8 @@ export function VerseReader({
   const { fontSize, translation } = useReaderPreferencesStore();
   const user = useAuthStore((s) => s.user);
   const saveLastPosition = useSaveLastPosition();
+  const { data: highlightedVerseIds } = useHighlights(bookId, !!user);
+  const toggleHighlight = useToggleHighlight(bookId);
   const [noteVerseId, setNoteVerseId] = useState<number | null>(null);
 
   // "Remember last page": recorded at chapter granularity whenever a logged-in
@@ -70,6 +73,8 @@ export function VerseReader({
                   translation={translation}
                   fontSize={fontSize}
                   onAddNote={setNoteVerseId}
+                  highlightedVerseIds={user ? highlightedVerseIds : undefined}
+                  onToggleHighlight={(verseId, highlighted) => toggleHighlight.mutate({ verseId, highlighted })}
                 />
               ))}
             </div>

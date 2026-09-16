@@ -64,6 +64,19 @@ export function useLogout() {
   });
 }
 
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (email: string) => authService.forgotPassword(email),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: ({ token, newPassword }: { token: string; newPassword: string }) =>
+      authService.resetPassword(token, newPassword),
+  });
+}
+
 export function isUnauthorized(error: unknown): boolean {
   return error instanceof ApiError && error.status === 401;
 }

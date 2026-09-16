@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { useAdminCategories, useCreateCategory, useDeleteCategory } from "@/hooks/admin/use-admin-reference";
 
 export default function AdminCategoriesPage() {
+  const t = useTranslations("admin.categoriesPage");
+  const tCommon = useTranslations("common");
   const { data: categories, isPending } = useAdminCategories();
   const createCategory = useCreateCategory();
   const deleteCategory = useDeleteCategory();
@@ -20,10 +23,10 @@ export default function AdminCategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Categories</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Button onClick={() => setOpen(true)}>
           <Plus className="size-4" />
-          New category
+          {t("newCategory")}
         </Button>
       </div>
 
@@ -31,10 +34,10 @@ export default function AdminCategoriesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Slug</TableHead>
-              <TableHead>Name (EN)</TableHead>
-              <TableHead>Name (ID)</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("colSlug")}</TableHead>
+              <TableHead>{t("colNameEn")}</TableHead>
+              <TableHead>{t("colNameId")}</TableHead>
+              <TableHead className="text-right">{tCommon("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -58,15 +61,15 @@ export default function AdminCategoriesPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New category</DialogTitle>
+            <DialogTitle>{t("newCategory")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Name (English)</Label>
+              <Label>{t("nameEnLabel")}</Label>
               <Input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
             </div>
             <div className="space-y-1.5">
-              <Label>Name (Indonesian)</Label>
+              <Label>{t("nameIdLabel")}</Label>
               <Input value={form.name_id} onChange={(e) => setForm({ ...form, name_id: e.target.value })} />
             </div>
           </div>
@@ -82,7 +85,7 @@ export default function AdminCategoriesPage() {
               }
               disabled={!form.name_en || !form.name_id || createCategory.isPending}
             >
-              Create
+              {tCommon("create")}
             </Button>
           </DialogFooter>
         </DialogContent>

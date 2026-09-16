@@ -20,6 +20,8 @@ export function VerseItem({
   translation,
   fontSize,
   onAddNote,
+  highlightedVerseIds,
+  onToggleHighlight,
 }: {
   verse: Verse;
   bookId: number;
@@ -28,12 +30,26 @@ export function VerseItem({
   translation: ReaderTranslation;
   fontSize: number;
   onAddNote: (verseId: number) => void;
+  /** Present (possibly empty) only when logged in — account-synced highlights. */
+  highlightedVerseIds?: Set<number>;
+  onToggleHighlight?: (verseId: number, currentlyHighlighted: boolean) => void;
 }) {
   const t = useTranslations("reader");
   const user = useAuthStore((s) => s.user);
-  const isHighlighted = useHighlightsStore((s) => s.isHighlighted(verse.id));
-  const toggleHighlight = useHighlightsStore((s) => s.toggle);
+  const localHighlighted = useHighlightsStore((s) => s.isHighlighted(verse.id));
+  const toggleLocalHighlight = useHighlightsStore((s) => s.toggle);
   const createBookmark = useCreateBookmark(bookId);
+
+  // Guests keep the device-local (localStorage) highlight set; logged-in users
+  // get the account-synced set fetched once for the whole book by the parent.
+  const isHighlighted = user ? (highlightedVerseIds?.has(verse.id) ?? false) : localHighlighted;
+  function toggleHighlight() {
+    if (user) {
+      onToggleHighlight?.(verse.id, isHighlighted);
+    } else {
+      toggleLocalHighlight(verse.id);
+    }
+  }
 
   const text =
     translation === "en" ? verse.text_en : translation === "id" ? verse.text_id : null;
@@ -96,7 +112,7 @@ export function VerseItem({
           variant="ghost"
           size="icon-xs"
           aria-label={t("highlight")}
-          onClick={() => toggleHighlight(verse.id)}
+          onClick={toggleHighlight}
         >
           <Highlighter className={cn("size-3.5", isHighlighted && "text-yellow-600")} />
         </Button>

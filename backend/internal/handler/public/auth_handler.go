@@ -106,6 +106,47 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	})
 }
 
+// ForgotPassword godoc
+// @Summary      Request a password reset link
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.ForgotPasswordRequest true "Account email"
+// @Success      204
+// @Router       /auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req dto.ForgotPasswordRequest
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	if err := h.auth.RequestPasswordReset(c.Request.Context(), req.Email); err != nil {
+		response.Fail(c, err)
+		return
+	}
+	response.NoContent(c)
+}
+
+// ResetPassword godoc
+// @Summary      Reset a password using a token from the forgot-password email
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.ResetPasswordRequest true "Token and new password"
+// @Success      204
+// @Failure      401 {object} response.Envelope
+// @Router       /auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req dto.ResetPasswordRequest
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	if err := h.auth.ResetPassword(c.Request.Context(), req.Token, req.NewPassword); err != nil {
+		response.Fail(c, err)
+		return
+	}
+	response.NoContent(c)
+}
+
 // Logout godoc
 // @Summary      Revoke the current refresh token and clear session cookies
 // @Tags         auth

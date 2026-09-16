@@ -1,0 +1,42 @@
+/*
+ * Minimal reimplementation of pdfjs-dist's `.textLayer` styling (see
+ * pdfjs-dist/web/pdf_viewer.css) — we use the low-level `TextLayer` class
+ * directly instead of the full viewer, so none of that stylesheet's rules
+ * (annotation editor toolbars, XFA layer, etc.) apply here automatically.
+ * The --total-scale-factor variable is required by TextLayer's internal
+ * `calc()`-based font sizing; it is set from JS on .textLayer per render.
+ */
+.pageWrapper {
+  position: relative;
+}
+
+.textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  opacity: 1;
+  line-height: 1;
+  text-align: initial;
+  transform-origin: 0 0;
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+}
+
+.textLayer :global(span),
+.textLayer :global(br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.textLayer :global(mark.pdfSearchMatch) {
+  background-color: rgb(250 204 21 / 0.5); /* yellow-400/50 */
+  border-radius: 2px;
+  color: transparent;
+}
+
+.textLayer :global(mark.pdfSearchMatchActive) {
+  background-color: rgb(249 115 22 / 0.7); /* orange-500/70 */
+}

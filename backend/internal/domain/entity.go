@@ -50,6 +50,15 @@ type RefreshToken struct {
 	CreatedAt    time.Time
 }
 
+type PasswordResetToken struct {
+	ID        int64
+	UserID    int64
+	TokenHash string
+	ExpiresAt time.Time
+	UsedAt    *time.Time
+	CreatedAt time.Time
+}
+
 type Session struct {
 	ID             int64
 	UserID         int64
@@ -189,6 +198,13 @@ type Bookmark struct {
 	IsAuto    bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type Highlight struct {
+	ID        int64
+	UserID    int64
+	VerseID   int64
+	CreatedAt time.Time
 }
 
 type Note struct {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ import { BookForm } from "@/features/admin/components/book-form";
 import { useDebounce } from "@/hooks/use-debounce";
 
 export default function AdminBooksPage() {
+  const tAdmin = useTranslations("admin");
+  const t = useTranslations("admin.booksPage");
   const [query, setQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const debounced = useDebounce(query);
@@ -30,17 +33,17 @@ export default function AdminBooksPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Books</h1>
+        <h1 className="text-2xl font-bold">{tAdmin("books")}</h1>
         <Button onClick={() => setCreateOpen(true)}>
           <Plus className="size-4" />
-          New book
+          {t("newBook")}
         </Button>
       </div>
 
       <Input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search books..."
+        placeholder={t("searchPlaceholder")}
         className="max-w-sm"
       />
 
@@ -48,11 +51,11 @@ export default function AdminBooksPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Chapters</TableHead>
-              <TableHead>Verses</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("colTitle")}</TableHead>
+              <TableHead>{t("colStatus")}</TableHead>
+              <TableHead>{t("colChapters")}</TableHead>
+              <TableHead>{t("colVerses")}</TableHead>
+              <TableHead className="text-right">{t("colActions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -82,7 +85,7 @@ export default function AdminBooksPage() {
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => {
-                        if (confirm(`Delete "${book.title}"?`)) deleteBook.mutate(book.id);
+                        if (confirm(t("confirmDelete", { title: book.title }))) deleteBook.mutate(book.id);
                       }}
                     >
                       <Trash2 className="size-4" />
@@ -93,7 +96,7 @@ export default function AdminBooksPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  No books yet.
+                  {t("noBooks")}
                 </TableCell>
               </TableRow>
             )}
@@ -104,7 +107,7 @@ export default function AdminBooksPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New book</DialogTitle>
+            <DialogTitle>{t("newBook")}</DialogTitle>
           </DialogHeader>
           <BookForm
             onSubmit={(input) =>

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useLogin } from "@/hooks/use-auth";
 import { ApiError } from "@/lib/api-error";
 
@@ -59,7 +59,12 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("password")}</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>{t("password")}</FormLabel>
+                <Link href="/forgot-password" className="text-sm text-muted-foreground underline">
+                  {t("forgotPassword")}
+                </Link>
+              </div>
               <FormControl>
                 <Input type="password" autoComplete="current-password" {...field} />
               </FormControl>

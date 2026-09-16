@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -103,12 +104,70 @@ func (fakeSessionRepo) ListActiveForUser(context.Context, int64) ([]domain.Sessi
 func (fakeSessionRepo) Revoke(context.Context, int64) error { return nil }
 func (fakeSessionRepo) Touch(context.Context, int64) error  { return nil }
 
+type fakeResetTokenRepo struct {
+	byHash map[string]*domain.PasswordResetToken
+	nextID int64
+}
+
+func newFakeResetTokenRepo() *fakeResetTokenRepo {
+	return &fakeResetTokenRepo{byHash: map[string]*domain.PasswordResetToken{}}
+}
+
+func (f *fakeResetTokenRepo) Create(_ context.Context, t *domain.PasswordResetToken) error {
+	f.nextID++
+	t.ID = f.nextID
+	f.byHash[t.TokenHash] = t
+	return nil
+}
+func (f *fakeResetTokenRepo) FindByHash(_ context.Context, h string) (*domain.PasswordResetToken, error) {
+	return f.byHash[h], nil
+}
+func (f *fakeResetTokenRepo) MarkUsed(_ context.Context, id int64) error {
+	for _, t := range f.byHash {
+		if t.ID == id {
+			now := time.Now()
+			t.UsedAt = &now
+		}
+	}
+	return nil
+}
+func (f *fakeResetTokenRepo) InvalidateAllForUser(_ context.Context, userID int64) error {
+	for _, t := range f.byHash {
+		if t.UserID == userID {
+			now := time.Now()
+			t.UsedAt = &now
+		}
+	}
+	return nil
+}
+
+type fakeMailer struct {
+	lastResetURL string
+	lastToEmail  string
+}
+
+func (f *fakeMailer) SendPasswordReset(_ context.Context, toEmail, _ string, resetURL string) error {
+	f.lastToEmail = toEmail
+	f.lastResetURL = resetURL
+	return nil
+}
+
 func newTestAuthService() (*service.AuthService, *fakeUserRepo) {
+	svc, users, _ := newTestAuthServiceWithMailer()
+	return svc, users
+}
+
+func newTestAuthServiceWithMailer() (*service.AuthService, *fakeUserRepo, *fakeMailer) {
 	users := newFakeUserRepo()
 	roles := newFakeRoleRepo()
 	refresh := newFakeRefreshTokenRepo()
+	resetTokens := newFakeResetTokenRepo()
+	mail := &fakeMailer{}
 	issuer := jwtutil.NewIssuer("test-secret", 15*time.Minute, "test-issuer")
-	return service.NewAuthService(users, roles, refresh, fakeSessionRepo{}, issuer, 30*24*time.Hour), users
+	svc := service.NewAuthService(
+		users, roles, refresh, fakeSessionRepo{}, resetTokens, issuer, 30*24*time.Hour, mail, "http://localhost:3000",
+	)
+	return svc, users, mail
 }
 
 func TestAuthService_Register_Success(t *testing.T) {
@@ -209,4 +268,56 @@ func TestAuthService_Refresh_RotatesToken(t *testing.T) {
 	if _, err := svc.Refresh(ctx, first.RefreshToken, service.RequestMeta{}); err == nil {
 		t.Error("expected the rotated-out refresh token to be rejected")
 	}
+}
+
+func TestAuthService_RequestPasswordReset_UnknownEmail_NoError(t *testing.T) {
+	svc, _, mail := newTestAuthServiceWithMailer()
+
+	if err := svc.RequestPasswordReset(context.Background(), "nobody@example.com"); err != nil {
+		t.Fatalf("expected no error for unknown email (avoid enumeration), got %v", err)
+	}
+	if mail.lastToEmail != "" {
+		t.Error("expected no email to be sent for an unknown address")
+	}
+}
+
+func TestAuthService_ResetPassword_Success(t *testing.T) {
+	svc, _, mail := newTestAuthServiceWithMailer()
+	ctx := context.Background()
+
+	if _, err := svc.Register(ctx, "Jane", "jane@example.com", "old-password1"); err != nil {
+		t.Fatalf("registration failed: %v", err)
+	}
+	if err := svc.RequestPasswordReset(ctx, "jane@example.com"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mail.lastResetURL == "" {
+		t.Fatal("expected a reset email to be sent")
+	}
+
+	token := extractTokenFromResetURL(t, mail.lastResetURL)
+	if err := svc.ResetPassword(ctx, token, "new-password1"); err != nil {
+		t.Fatalf("unexpected error resetting password: %v", err)
+	}
+
+	if _, err := svc.Login(ctx, "jane@example.com", "old-password1", service.RequestMeta{}); err == nil {
+		t.Error("expected old password to no longer work")
+	}
+	if _, err := svc.Login(ctx, "jane@example.com", "new-password1", service.RequestMeta{}); err != nil {
+		t.Errorf("expected new password to work, got %v", err)
+	}
+
+	// The token is single-use.
+	if err := svc.ResetPassword(ctx, token, "another-password1"); err == nil {
+		t.Error("expected a reused reset token to be rejected")
+	}
+}
+
+func extractTokenFromResetURL(t *testing.T, resetURL string) string {
+	t.Helper()
+	_, token, found := strings.Cut(resetURL, "token=")
+	if !found {
+		t.Fatalf("no token= query param found in %q", resetURL)
+	}
+	return token
 }

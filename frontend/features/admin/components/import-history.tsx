@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +16,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 export function ImportHistory() {
+  const t = useTranslations("admin.import_");
   const { data: logs, isPending } = useImportHistory();
 
   return (
@@ -21,13 +24,13 @@ export function ImportHistory() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>File</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Rows</TableHead>
-            <TableHead>Inserted</TableHead>
-            <TableHead>Updated</TableHead>
-            <TableHead>Skipped</TableHead>
-            <TableHead>Created</TableHead>
+            <TableHead>{t("colFile")}</TableHead>
+            <TableHead>{t("colStatus")}</TableHead>
+            <TableHead>{t("colRows")}</TableHead>
+            <TableHead>{t("colInserted")}</TableHead>
+            <TableHead>{t("colUpdated")}</TableHead>
+            <TableHead>{t("colSkipped")}</TableHead>
+            <TableHead>{t("colCreated")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -44,7 +47,7 @@ export function ImportHistory() {
               <TableRow key={log.id}>
                 <TableCell>{log.filename}</TableCell>
                 <TableCell>
-                  <Badge variant={STATUS_VARIANT[log.status] ?? "outline"}>{log.status}</Badge>
+                  <Badge variant={STATUS_VARIANT[log.status] ?? "outline"}>{t(`status.${log.status}`)}</Badge>
                 </TableCell>
                 <TableCell>
                   {log.processed_rows}/{log.total_rows}
@@ -60,7 +63,7 @@ export function ImportHistory() {
           ) : (
             <TableRow>
               <TableCell colSpan={7} className="text-center text-muted-foreground">
-                No imports yet.
+                {t("noImportsYet")}
               </TableCell>
             </TableRow>
           )}

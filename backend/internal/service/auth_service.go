@@ -5,21 +5,28 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"bookreader/backend/internal/domain"
 	"bookreader/backend/pkg/apperror"
 	"bookreader/backend/pkg/hash"
 	"bookreader/backend/pkg/jwtutil"
+	"bookreader/backend/pkg/mailer"
 )
 
+const passwordResetTTL = time.Hour
+
 type AuthService struct {
-	users      domain.UserRepository
-	roles      domain.RoleRepository
-	refresh    domain.RefreshTokenRepository
-	sessions   domain.SessionRepository
-	issuer     *jwtutil.Issuer
-	refreshTTL time.Duration
+	users        domain.UserRepository
+	roles        domain.RoleRepository
+	refresh      domain.RefreshTokenRepository
+	sessions     domain.SessionRepository
+	resetTokens  domain.PasswordResetTokenRepository
+	issuer       *jwtutil.Issuer
+	refreshTTL   time.Duration
+	mailer       mailer.Mailer
+	frontendBase string
 }
 
 func NewAuthService(
@@ -27,10 +34,16 @@ func NewAuthService(
 	roles domain.RoleRepository,
 	refresh domain.RefreshTokenRepository,
 	sessions domain.SessionRepository,
+	resetTokens domain.PasswordResetTokenRepository,
 	issuer *jwtutil.Issuer,
 	refreshTTL time.Duration,
+	mail mailer.Mailer,
+	frontendBase string,
 ) *AuthService {
-	return &AuthService{users: users, roles: roles, refresh: refresh, sessions: sessions, issuer: issuer, refreshTTL: refreshTTL}
+	return &AuthService{
+		users: users, roles: roles, refresh: refresh, sessions: sessions, resetTokens: resetTokens,
+		issuer: issuer, refreshTTL: refreshTTL, mailer: mail, frontendBase: frontendBase,
+	}
 }
 
 type AuthTokens struct {
@@ -113,6 +126,66 @@ func (s *AuthService) Refresh(ctx context.Context, rawRefreshToken string, meta 
 	// so a reused/stolen token is detectable (its replaced_by_id will be set).
 	_ = s.refresh.Revoke(ctx, stored.ID, nil)
 	return tokens, nil
+}
+
+// RequestPasswordReset always returns nil on success, whether or not the email
+// belongs to an account, so callers can't use response timing/shape to enumerate
+// registered users.
+func (s *AuthService) RequestPasswordReset(ctx context.Context, email string) error {
+	user, err := s.users.FindByEmail(ctx, email)
+	if err != nil {
+		return apperror.Internal("failed to look up user", err)
+	}
+	if user == nil || !user.IsActive {
+		return nil
+	}
+
+	rawToken, err := jwtutil.GenerateOpaqueToken()
+	if err != nil {
+		return apperror.Internal("failed to generate reset token", err)
+	}
+
+	if err := s.resetTokens.Create(ctx, &domain.PasswordResetToken{
+		UserID: user.ID, TokenHash: hash.HashToken(rawToken), ExpiresAt: time.Now().Add(passwordResetTTL),
+	}); err != nil {
+		return apperror.Internal("failed to persist reset token", err)
+	}
+
+	resetURL := fmt.Sprintf("%s/reset-password?token=%s", s.frontendBase, rawToken)
+	if err := s.mailer.SendPasswordReset(ctx, user.Email, user.Name, resetURL); err != nil {
+		return apperror.Internal("failed to send reset email", err)
+	}
+	return nil
+}
+
+func (s *AuthService) ResetPassword(ctx context.Context, rawToken, newPassword string) error {
+	stored, err := s.resetTokens.FindByHash(ctx, hash.HashToken(rawToken))
+	if err != nil {
+		return apperror.Internal("failed to look up reset token", err)
+	}
+	if stored == nil || stored.UsedAt != nil || stored.ExpiresAt.Before(time.Now()) {
+		return apperror.Unauthorized("this reset link is invalid or has expired")
+	}
+
+	user, err := s.users.FindByID(ctx, stored.UserID)
+	if err != nil || user == nil {
+		return apperror.Unauthorized("this reset link is invalid or has expired")
+	}
+
+	hashed, err := hash.HashPassword(newPassword)
+	if err != nil {
+		return apperror.Internal("failed to hash password", err)
+	}
+	user.PasswordHash = hashed
+	if err := s.users.Update(ctx, user); err != nil {
+		return apperror.Internal("failed to update password", err)
+	}
+
+	_ = s.resetTokens.MarkUsed(ctx, stored.ID)
+	// A compromised inbox that granted the reset shouldn't also inherit existing
+	// sessions, so revoke every refresh token issued before this reset.
+	_ = s.refresh.RevokeAllForUser(ctx, user.ID)
+	return nil
 }
 
 func (s *AuthService) Logout(ctx context.Context, rawRefreshToken string) error {

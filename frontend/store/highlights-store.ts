@@ -8,9 +8,10 @@ interface HighlightsState {
   isHighlighted: (verseId: number) => boolean;
 }
 
-// Highlights are device-local only (no highlights table in the backend schema
-// yet) — persisted to localStorage so they survive reloads on the same device.
-// A future iteration could sync these to the account via a dedicated endpoint.
+// Fallback for guests only. Logged-in users get account-synced highlights via
+// the /verses/:id/highlight endpoints (see hooks/use-highlights.ts); this
+// localStorage-backed store exists purely so an unauthenticated reader can
+// still highlight verses on their current device.
 export const useHighlightsStore = create<HighlightsState>()(
   persist(
     (set, get) => ({

@@ -44,6 +44,17 @@ Or run everything containerized:
 docker compose up --build
 ```
 
+### Testing
+
+```bash
+cd backend
+go test ./...                              # unit tests (fakes, no external services)
+go test -tags=integration ./test/integration/...  # requires a running Docker daemon;
+                                                    # spins up throwaway Postgres/Redis containers
+```
+
+The integration suite exercises the Excel/CSV import pipeline and full-text search directly against real Postgres (generated `tsvector` columns, `COPY`-based batch upsert) rather than fakes — see [test/integration/helpers_test.go](backend/test/integration/helpers_test.go).
+
 ## Documentation
 
 - [Architecture & ERD](docs/architecture.md)

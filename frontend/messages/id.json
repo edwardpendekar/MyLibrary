@@ -59,7 +59,9 @@
     "page": "Halaman",
     "of": "dari",
     "darkMode": "Mode gelap",
-    "bookmarkPage": "Tandai halaman ini"
+    "bookmarkPage": "Tandai halaman ini",
+    "previousMatch": "Hasil sebelumnya",
+    "nextMatch": "Hasil berikutnya"
   },
   "search": {
     "title": "Cari",
@@ -79,7 +81,19 @@
     "submitRegister": "Buat akun",
     "noAccount": "Belum punya akun?",
     "haveAccount": "Sudah punya akun?",
-    "invalidCredentials": "Email atau kata sandi salah."
+    "invalidCredentials": "Email atau kata sandi salah.",
+    "forgotPassword": "Lupa kata sandi?",
+    "forgotPasswordTitle": "Atur ulang kata sandi",
+    "forgotPasswordHint": "Masukkan alamat email akun Anda dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi.",
+    "sendResetLink": "Kirim tautan reset",
+    "resetLinkSent": "Jika akun dengan email tersebut ada, tautan reset telah dikirim.",
+    "backToLogin": "Kembali ke halaman masuk",
+    "resetPasswordTitle": "Buat kata sandi baru",
+    "newPassword": "Kata sandi baru",
+    "resetPassword": "Atur ulang kata sandi",
+    "resetPasswordSuccess": "Kata sandi Anda telah diperbarui. Anda sekarang dapat masuk.",
+    "resetPasswordInvalid": "Tautan reset ini tidak valid atau sudah kedaluwarsa.",
+    "requestNewLink": "Minta tautan baru"
   },
   "admin": {
     "dashboard": "Dasbor",
@@ -118,7 +132,105 @@
         "completed": "Selesai",
         "failed": "Gagal",
         "rolled_back": "Dibatalkan"
+      },
+      "chooseFile": "Pilih file",
+      "validating": "Memvalidasi...",
+      "errors": "Kesalahan",
+      "row": "Baris",
+      "book": "Buku",
+      "ch": "Ps",
+      "vs": "Ay",
+      "processed": "Diproses",
+      "verses": "Ayat",
+      "inserted": "ditambahkan",
+      "updated": "diperbarui",
+      "skipped": "dilewati",
+      "colFile": "File",
+      "colStatus": "Status",
+      "colRows": "Baris",
+      "colInserted": "Ditambahkan",
+      "colUpdated": "Diperbarui",
+      "colSkipped": "Dilewati",
+      "colCreated": "Dibuat",
+      "noImportsYet": "Belum ada impor.",
+      "uploadTitle": "Unggah file Excel/CSV",
+      "uploadColumnsHint": "Kolom: Book, Chapter, Verse, text_en, text_id, title_en, title_id",
+      "statusLabel": "Status",
+      "booksCreated": "Buku",
+      "chaptersCreated": "Pasal",
+      "sectionsCreated": "Bagian"
+    },
+    "fileUpload": {
+      "coverTitle": "Gambar sampul",
+      "pdfTitle": "PDF ebook",
+      "viewCurrentFile": "Lihat file saat ini",
+      "upload": "Unggah",
+      "uploading": "Mengunggah..."
+    },
+    "booksPage": {
+      "newBook": "Buku baru",
+      "searchPlaceholder": "Cari buku...",
+      "colTitle": "Judul",
+      "colStatus": "Status",
+      "colChapters": "Pasal",
+      "colVerses": "Ayat",
+      "colActions": "Aksi",
+      "noBooks": "Belum ada buku.",
+      "confirmDelete": "Hapus \"{title}\"?",
+      "bookNotFound": "Buku tidak ditemukan.",
+      "form": {
+        "title": "Judul",
+        "author": "Penulis",
+        "description": "Deskripsi",
+        "language": "Bahasa",
+        "category": "Kategori",
+        "selectLanguage": "Pilih bahasa",
+        "selectCategory": "Pilih kategori",
+        "year": "Tahun",
+        "isbn": "ISBN",
+        "status": "Status",
+        "statusDraft": "Draf",
+        "statusPublished": "Diterbitkan",
+        "statusArchived": "Diarsipkan",
+        "saveChanges": "Simpan perubahan",
+        "createBook": "Buat buku"
       }
+    },
+    "categoriesPage": {
+      "title": "Kategori",
+      "newCategory": "Kategori baru",
+      "colSlug": "Slug",
+      "colNameEn": "Nama (EN)",
+      "colNameId": "Nama (ID)",
+      "nameEnLabel": "Nama (Inggris)",
+      "nameIdLabel": "Nama (Indonesia)"
+    },
+    "languagesPage": {
+      "title": "Bahasa",
+      "newLanguage": "Bahasa baru",
+      "colCode": "Kode",
+      "colName": "Nama",
+      "colNativeName": "Nama asli",
+      "codeLabel": "Kode (mis. fr)",
+      "nameLabel": "Nama (Inggris)",
+      "nativeNameLabel": "Nama asli"
+    },
+    "usersPage": {
+      "title": "Pengguna",
+      "colName": "Nama",
+      "colEmail": "Email",
+      "colRole": "Peran",
+      "colStatus": "Status",
+      "active": "aktif",
+      "inactive": "nonaktif"
+    },
+    "auditLogPage": {
+      "title": "Log audit",
+      "colWhen": "Waktu",
+      "colAction": "Aksi",
+      "colEntity": "Entitas",
+      "colIp": "IP",
+      "noEntries": "Belum ada entri."
     }
   },
   "common": {

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import { useCommitImport, useImportProgress, useUploadImportFile } from "@/hooks
 import type { ImportPreview } from "@/types/api";
 
 export function ImportUploader() {
+  const t = useTranslations("admin.import_");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const upload = useUploadImportFile();
   const commit = useCommitImport();
@@ -49,13 +51,11 @@ export function ImportUploader() {
           />
           <Upload className="size-8 text-muted-foreground" />
           <div>
-            <p className="font-medium">Upload Excel/CSV file</p>
-            <p className="text-sm text-muted-foreground">
-              Columns: Book, Chapter, Verse, text_en, text_id, title_en, title_id
-            </p>
+            <p className="font-medium">{t("uploadTitle")}</p>
+            <p className="text-sm text-muted-foreground">{t("uploadColumnsHint")}</p>
           </div>
           <Button onClick={() => inputRef.current?.click()} disabled={upload.isPending}>
-            {upload.isPending ? "Validating..." : "Choose file"}
+            {upload.isPending ? t("validating") : t("chooseFile")}
           </Button>
         </CardContent>
       </Card>
@@ -64,10 +64,10 @@ export function ImportUploader() {
         <Card>
           <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <Stat label="Total rows" value={preview.total_rows} />
-              <Stat label="Books" value={preview.distinct_books} />
-              <Stat label="Chapters" value={preview.distinct_chapters} />
-              <Stat label="Errors" value={preview.validation_errors?.length ?? 0} />
+              <Stat label={t("rowsTotal")} value={preview.total_rows} />
+              <Stat label={t("distinctBooks")} value={preview.distinct_books} />
+              <Stat label={t("distinctChapters")} value={preview.distinct_chapters} />
+              <Stat label={t("errors")} value={preview.validation_errors?.length ?? 0} />
             </div>
 
             {(preview.sample_rows?.length ?? 0) > 0 && (
@@ -75,10 +75,10 @@ export function ImportUploader() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Row</TableHead>
-                      <TableHead>Book</TableHead>
-                      <TableHead>Ch</TableHead>
-                      <TableHead>Vs</TableHead>
+                      <TableHead>{t("row")}</TableHead>
+                      <TableHead>{t("book")}</TableHead>
+                      <TableHead>{t("ch")}</TableHead>
+                      <TableHead>{t("vs")}</TableHead>
                       <TableHead>text_en</TableHead>
                       <TableHead>title_en</TableHead>
                     </TableRow>
@@ -101,11 +101,13 @@ export function ImportUploader() {
 
             {(preview.validation_errors?.length ?? 0) > 0 && (
               <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
-                <p className="mb-1 font-medium text-destructive">Validation errors (first {preview.validation_errors?.length ?? 0})</p>
+                <p className="mb-1 font-medium text-destructive">
+                  {t("validationErrors")} ({preview.validation_errors?.length ?? 0})
+                </p>
                 <ul className="max-h-32 space-y-0.5 overflow-y-auto text-muted-foreground">
                   {(preview.validation_errors ?? []).map((e) => (
                     <li key={e.row_number}>
-                      Row {e.row_number}: {e.message}
+                      {t("row")} {e.row_number}: {e.message}
                     </li>
                   ))}
                 </ul>
@@ -116,11 +118,11 @@ export function ImportUploader() {
               <RadioGroup value={mode} onValueChange={(v) => setMode(v as "insert" | "upsert")}>
                 <label className="flex items-center gap-2 text-sm">
                   <RadioGroupItem value="insert" />
-                  Insert only (skip duplicates)
+                  {t("modeInsert")}
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <RadioGroupItem value="upsert" />
-                  Insert and update existing
+                  {t("modeUpsert")}
                 </label>
               </RadioGroup>
             </div>
@@ -134,7 +136,7 @@ export function ImportUploader() {
               }
               disabled={commit.isPending || !!committedId}
             >
-              Start import
+              {t("commit")}
             </Button>
           </CardContent>
         </Card>
@@ -143,17 +145,19 @@ export function ImportUploader() {
       {committedId && progress && (
         <Card>
           <CardContent className="space-y-2 pt-6 text-sm">
-            <p className="font-medium">Status: {progress.status}</p>
-            <p>
-              Processed {progress.processed_rows} / {progress.total_rows}
+            <p className="font-medium">
+              {t("statusLabel")}: {t(`status.${progress.status}`)}
             </p>
             <p>
-              Books +{progress.books_created} · Chapters +{progress.chapters_created} · Sections +
-              {progress.sections_created}
+              {t("processed")} {progress.processed_rows} / {progress.total_rows}
             </p>
             <p>
-              Verses inserted {progress.verses_inserted} · updated {progress.verses_updated} · skipped{" "}
-              {progress.verses_skipped}
+              {t("booksCreated")} +{progress.books_created} · {t("chaptersCreated")} +{progress.chapters_created} ·{" "}
+              {t("sectionsCreated")} +{progress.sections_created}
+            </p>
+            <p>
+              {t("verses")} {t("inserted")} {progress.verses_inserted} · {t("updated")} {progress.verses_updated} ·{" "}
+              {t("skipped")} {progress.verses_skipped}
             </p>
             {progress.error_message && <p className="text-destructive">{progress.error_message}</p>}
           </CardContent>

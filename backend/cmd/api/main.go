@@ -25,6 +25,7 @@ import (
 	"syscall"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rs/zerolog"
 
 	"bookreader/backend/internal/config"
 	adminh "bookreader/backend/internal/handler/admin"
@@ -35,6 +36,7 @@ import (
 	"bookreader/backend/pkg/cache"
 	"bookreader/backend/pkg/jwtutil"
 	"bookreader/backend/pkg/logger"
+	"bookreader/backend/pkg/mailer"
 	"bookreader/backend/pkg/storage"
 )
 
@@ -67,12 +69,14 @@ func main() {
 
 	storageProvider := buildStorageProvider(cfg)
 	issuer := jwtutil.NewIssuer(cfg.JWT.AccessSecret, cfg.JWT.AccessTTL, cfg.JWT.Issuer)
+	mailSvc := buildMailer(cfg, log)
 
 	// --- repositories ---
 	roleRepo := postgres.NewRoleRepository(db)
 	userRepo := postgres.NewUserRepository(db)
 	refreshRepo := postgres.NewRefreshTokenRepository(db)
 	sessionRepo := postgres.NewSessionRepository(db)
+	resetTokenRepo := postgres.NewPasswordResetTokenRepository(db)
 	languageRepo := postgres.NewLanguageRepository(db)
 	categoryRepo := postgres.NewCategoryRepository(db)
 	fileRepo := postgres.NewFileRepository(db)
@@ -84,13 +88,14 @@ func main() {
 	favoriteRepo := postgres.NewFavoriteRepository(db)
 	bookmarkRepo := postgres.NewBookmarkRepository(db)
 	noteRepo := postgres.NewNoteRepository(db)
+	highlightRepo := postgres.NewHighlightRepository(db)
 	importLogRepo := postgres.NewImportLogRepository(db)
 	auditLogRepo := postgres.NewAuditLogRepository(db)
 	statsRepo := postgres.NewStatsRepository(db)
 	searchRepo := postgres.NewSearchRepository(db)
 
 	// --- services ---
-	authSvc := service.NewAuthService(userRepo, roleRepo, refreshRepo, sessionRepo, issuer, cfg.JWT.RefreshTTL)
+	authSvc := service.NewAuthService(userRepo, roleRepo, refreshRepo, sessionRepo, resetTokenRepo, issuer, cfg.JWT.RefreshTTL, mailSvc, cfg.FrontendURL)
 	userSvc := service.NewUserService(userRepo, roleRepo)
 	languageSvc := service.NewLanguageService(languageRepo)
 	categorySvc := service.NewCategoryService(categoryRepo)
@@ -99,6 +104,7 @@ func main() {
 	favoriteSvc := service.NewFavoriteService(favoriteRepo)
 	bookmarkSvc := service.NewBookmarkService(bookmarkRepo)
 	noteSvc := service.NewNoteService(noteRepo)
+	highlightSvc := service.NewHighlightService(highlightRepo)
 	auditSvc := service.NewAuditService(auditLogRepo)
 	statsSvc := service.NewStatsService(statsRepo)
 	searchSvc := service.NewSearchService(searchRepo, cacheSvc)
@@ -106,13 +112,14 @@ func main() {
 
 	// --- handlers ---
 	h := &router.Handlers{
-		Auth:      publich.NewAuthHandler(authSvc, cfg),
-		Me:        publich.NewMeHandler(userSvc),
-		Books:     publich.NewBookHandler(bookSvc, favoriteSvc, fileSvc, pdfRepo),
-		Favorites: publich.NewFavoriteHandler(favoriteSvc, fileSvc),
-		Bookmarks: publich.NewBookmarkHandler(bookmarkSvc),
-		Notes:     publich.NewNoteHandler(noteSvc),
-		Search:    publich.NewSearchHandler(searchSvc),
+		Auth:       publich.NewAuthHandler(authSvc, cfg),
+		Me:         publich.NewMeHandler(userSvc),
+		Books:      publich.NewBookHandler(bookSvc, favoriteSvc, fileSvc, pdfRepo),
+		Favorites:  publich.NewFavoriteHandler(favoriteSvc, fileSvc),
+		Bookmarks:  publich.NewBookmarkHandler(bookmarkSvc),
+		Notes:      publich.NewNoteHandler(noteSvc),
+		Highlights: publich.NewHighlightHandler(highlightSvc),
+		Search:     publich.NewSearchHandler(searchSvc),
 
 		AdminBooks:      adminh.NewBookHandler(bookSvc, fileSvc, pdfRepo),
 		AdminFiles:      adminh.NewFileHandler(fileRepo, bookRepo, fileSvc),
@@ -166,4 +173,11 @@ func buildStorageProvider(cfg *config.Config) storage.Provider {
 	}
 	_ = os.MkdirAll(cfg.Storage.LocalBaseDir, 0o755)
 	return storage.NewLocalDisk(cfg.Storage.LocalBaseDir, cfg.Storage.LocalPublic)
+}
+
+func buildMailer(cfg *config.Config, log zerolog.Logger) mailer.Mailer {
+	if cfg.SMTP.Host == "" {
+		return mailer.NewConsoleMailer(log)
+	}
+	return mailer.NewSMTPMailer(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.Username, cfg.SMTP.Password, cfg.SMTP.From)
 }

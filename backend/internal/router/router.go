@@ -23,13 +23,14 @@ import (
 )
 
 type Handlers struct {
-	Auth      *publich.AuthHandler
-	Me        *publich.MeHandler
-	Books     *publich.BookHandler
-	Favorites *publich.FavoriteHandler
-	Bookmarks *publich.BookmarkHandler
-	Notes     *publich.NoteHandler
-	Search    *publich.SearchHandler
+	Auth       *publich.AuthHandler
+	Me         *publich.MeHandler
+	Books      *publich.BookHandler
+	Favorites  *publich.FavoriteHandler
+	Bookmarks  *publich.BookmarkHandler
+	Notes      *publich.NoteHandler
+	Highlights *publich.HighlightHandler
+	Search     *publich.SearchHandler
 
 	AdminBooks      *adminh.BookHandler
 	AdminFiles      *adminh.FileHandler
@@ -69,18 +70,25 @@ func New(cfg *config.Config, log zerolog.Logger, issuer *jwtutil.Issuer, redisCa
 	}
 
 	api := r.Group("/api/v1")
-	registerPublicRoutes(api, issuer, h)
+	registerPublicRoutes(api, issuer, redisCache, cfg.RateLimit.AuthRequestsPerMinute, h)
 	registerAdminRoutes(api, issuer, h, svc)
 
 	return r
 }
 
-func registerPublicRoutes(api *gin.RouterGroup, issuer *jwtutil.Issuer, h *Handlers) {
+func registerPublicRoutes(api *gin.RouterGroup, issuer *jwtutil.Issuer, redisCache *cache.Cache, authRPM int, h *Handlers) {
+	// Stricter, separately-scoped limit on credential-guessing-prone endpoints —
+	// the general per-IP limit alone is far too generous for brute-forcing a
+	// password (120/min globally would still allow 120 login guesses/min).
+	authLimiter := middleware.RateLimitScoped(redisCache, "auth", authRPM)
+
 	auth := api.Group("/auth")
-	auth.POST("/register", h.Auth.Register)
-	auth.POST("/login", h.Auth.Login)
-	auth.POST("/refresh", h.Auth.Refresh)
+	auth.POST("/register", authLimiter, h.Auth.Register)
+	auth.POST("/login", authLimiter, h.Auth.Login)
+	auth.POST("/refresh", authLimiter, h.Auth.Refresh)
 	auth.POST("/logout", h.Auth.Logout)
+	auth.POST("/forgot-password", authLimiter, h.Auth.ForgotPassword)
+	auth.POST("/reset-password", authLimiter, h.Auth.ResetPassword)
 
 	api.GET("/me", middleware.Auth(issuer), h.Me.Me)
 	api.GET("/me/favorites", middleware.Auth(issuer), h.Favorites.List)
@@ -101,6 +109,7 @@ func registerPublicRoutes(api *gin.RouterGroup, issuer *jwtutil.Issuer, h *Handl
 	byID.GET("/:id/bookmarks", middleware.Auth(issuer), h.Bookmarks.ListByBook)
 	byID.GET("/:id/last-position", middleware.Auth(issuer), h.Bookmarks.LastPosition)
 	byID.GET("/:id/notes", middleware.Auth(issuer), h.Notes.ListByBook)
+	byID.GET("/:id/highlights", middleware.Auth(issuer), h.Highlights.ListByBook)
 
 	bookmarks := api.Group("/bookmarks")
 	bookmarks.Use(middleware.Auth(issuer))
@@ -117,6 +126,11 @@ func registerPublicRoutes(api *gin.RouterGroup, issuer *jwtutil.Issuer, h *Handl
 	notes.POST("", h.Notes.Create)
 	notes.PUT("/:id", h.Notes.Update)
 	notes.DELETE("/:id", h.Notes.Delete)
+
+	verses := api.Group("/verses")
+	verses.Use(middleware.Auth(issuer))
+	verses.POST("/:id/highlight", h.Highlights.Add)
+	verses.DELETE("/:id/highlight", h.Highlights.Remove)
 }
 
 func registerAdminRoutes(api *gin.RouterGroup, issuer *jwtutil.Issuer, h *Handlers, svc *Services) {

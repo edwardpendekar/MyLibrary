@@ -20,8 +20,12 @@ test.describe("Search", () => {
     await page.goto("/en/search?q=beginning");
 
     await expect(page.getByText(/Genesis 1:1/)).toBeVisible({ timeout: 10_000 });
+    // Scoped to the Genesis 1:1 result row: the dev dataset has other books
+    // whose text also contains "beginning", so an unscoped locator would hit
+    // Playwright's strict-mode violation (multiple matches).
+    const genesisResult = page.locator("li", { hasText: "Genesis 1:1" });
     // ts_headline wraps the matched term in <b>, rendered as bold text.
-    await expect(page.locator("b", { hasText: "beginning" })).toBeVisible();
+    await expect(genesisResult.locator("b", { hasText: "beginning" }).first()).toBeVisible();
   });
 
   test("book search finds a book by title", async ({ page }) => {
