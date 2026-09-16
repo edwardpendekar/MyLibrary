@@ -8,8 +8,11 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/xuri/excelize/v2"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 // ImportRow is one parsed line of the Book/Chapter/Verse/text_en/text_id/title_en/title_id
@@ -155,7 +158,12 @@ func newCSVRowReader(r io.ReadSeeker) (*csvRowReader, error) {
 		return nil, fmt.Errorf("rewind file: %w", err)
 	}
 
-	cr := csv.NewReader(bufio.NewReaderSize(r, 64*1024))
+	decoded, err := decodeToUTF8(r)
+	if err != nil {
+		return nil, fmt.Errorf("detect encoding: %w", err)
+	}
+
+	cr := csv.NewReader(bufio.NewReaderSize(decoded, 64*1024))
 	cr.Comma = delimiter
 	cr.ReuseRecord = true
 	headerCells, err := cr.Read()
@@ -194,6 +202,37 @@ func detectCSVDelimiter(r io.ReadSeeker) (rune, error) {
 		return ';', nil
 	}
 	return ',', nil
+}
+
+// decodeToUTF8 transcodes the stream if it isn't already valid UTF-8. Real
+// exports from older tools/Excel are routinely Windows-1252 — a file like
+// that parses as CSV just fine (encoding/csv only cares about delimiters and
+// quotes, not encoding) but then fails downstream with a cryptic Postgres
+// "invalid byte sequence for encoding UTF8" the moment its text reaches a
+// TEXT column, aborting the whole batch the offending row landed in. This
+// only ever fires on files that genuinely aren't valid UTF-8, so a real
+// UTF-8 file is never touched.
+func decodeToUTF8(r io.ReadSeeker) (io.Reader, error) {
+	sample := make([]byte, 32*1024)
+	n, err := r.Read(sample)
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+	if _, err := r.Seek(0, io.SeekStart); err != nil {
+		return nil, fmt.Errorf("rewind file: %w", err)
+	}
+
+	// Drop the last few bytes before validating: a truncated multi-byte UTF-8
+	// sequence right at the sample boundary would otherwise look invalid even
+	// in a genuinely UTF-8 file.
+	checkLen := n
+	if checkLen > 4 {
+		checkLen -= 4
+	}
+	if utf8.Valid(sample[:checkLen]) {
+		return r, nil
+	}
+	return transform.NewReader(r, charmap.Windows1252.NewDecoder()), nil
 }
 
 func countCSVDataRows(r io.ReadSeeker) (int, error) {
@@ -253,7 +292,11 @@ func cell(cells []string, header map[string]int, name string) string {
 	if !ok || idx >= len(cells) {
 		return ""
 	}
-	return strings.TrimSpace(cells[idx])
+	// Belt-and-braces: even after CSV encoding detection (or for .xlsx, which
+	// excelize already guarantees is UTF-8), strip any byte sequence that
+	// still isn't valid UTF-8 rather than let it reach Postgres, which
+	// rejects the entire batch — not just the one bad cell — on this.
+	return strings.TrimSpace(strings.ToValidUTF8(cells[idx], ""))
 }
 
 func parseRow(rowNumber int, cells []string, header map[string]int) (*ImportRow, *RowError) {

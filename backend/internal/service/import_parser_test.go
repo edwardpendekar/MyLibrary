@@ -3,6 +3,10 @@ package service
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
+
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 func TestCSVRowReader_ParsesValidRows(t *testing.T) {
@@ -151,5 +155,42 @@ func TestCSVRowReader_CommaDelimitedStillWorksAlongsideSemicolon(t *testing.T) {
 	}
 	if row.Book != "Genesis" {
 		t.Errorf("expected comma-delimited files to still parse, got %+v", row)
+	}
+}
+
+// Reproduces the exact reported failure: a Windows-1252-encoded CSV (Excel's
+// default under many non-US locales) containing an em dash (byte 0x97 in
+// CP1252) parses as CSV without error, but Postgres rejects that raw byte
+// as invalid UTF-8 the moment it reaches a TEXT column — aborting the whole
+// batch the row landed in, not just that row.
+func TestCSVRowReader_Windows1252IsTranscodedToUTF8(t *testing.T) {
+	utf8Text := "one thing—another thing"
+	cp1252Bytes, _, err := transform.String(charmap.Windows1252.NewEncoder(), utf8Text)
+	if err != nil {
+		t.Fatalf("failed to build CP1252 fixture: %v", err)
+	}
+
+	csvContent := "book,chapter,verse,text_en,text_id,title_en,title_id\n" +
+		"Genesis,1,1," + cp1252Bytes + ",teks,judul,title\n"
+
+	if utf8.ValidString(csvContent) {
+		t.Fatal("test fixture must actually be invalid UTF-8 to exercise the fallback")
+	}
+
+	reader, err := NewRowReader(".csv", strings.NewReader(csvContent))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer reader.Close()
+
+	row, rowErr, hasMore, err := reader.Next()
+	if err != nil || rowErr != nil || !hasMore {
+		t.Fatalf("unexpected result: row=%v rowErr=%v hasMore=%v err=%v", row, rowErr, hasMore, err)
+	}
+	if !utf8.ValidString(row.TextEN) {
+		t.Fatalf("expected transcoded text to be valid UTF-8, got %q", row.TextEN)
+	}
+	if row.TextEN != utf8Text {
+		t.Errorf("expected %q, got %q", utf8Text, row.TextEN)
 	}
 }
