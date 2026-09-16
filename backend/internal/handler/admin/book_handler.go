@@ -97,11 +97,18 @@ func (h *BookHandler) Update(c *gin.Context) {
 	if !httpx.BindJSON(c, &req) {
 		return
 	}
-	book := &domain.Book{
-		ID: id, Title: req.Title, Author: req.Author, Description: req.Description,
-		LanguageID: req.LanguageID, CategoryID: req.CategoryID, Year: req.Year, ISBN: req.ISBN,
-		Slug: req.Slug, Status: req.Status,
+	// Loaded first (rather than building a bare struct from the request) so
+	// fields this form doesn't edit — cover/PDF references, view count —
+	// survive the update instead of being zeroed out by Update's blanket
+	// column overwrite.
+	book, err := h.books.GetByID(c.Request.Context(), id)
+	if err != nil {
+		response.Fail(c, err)
+		return
 	}
+	book.Title, book.Author, book.Description = req.Title, req.Author, req.Description
+	book.LanguageID, book.CategoryID = req.LanguageID, req.CategoryID
+	book.Year, book.ISBN, book.Slug, book.Status = req.Year, req.ISBN, req.Slug, req.Status
 	if err := h.books.Update(c.Request.Context(), book); err != nil {
 		response.Fail(c, err)
 		return
