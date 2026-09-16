@@ -9,4 +9,5 @@ export const adminUsersService = {
   list: (cursor?: string) => apiClient.get<User[]>(`/api/v1/admin/users${cursor ? `?cursor=${cursor}` : ""}`),
   changeRole: (id: number, role: string) => apiClient.put<void>(`/api/v1/admin/users/${id}/role`, { role }),
   deactivate: (id: number) => apiClient.delete<void>(`/api/v1/admin/users/${id}`),
+  activate: (id: number) => apiClient.put<void>(`/api/v1/admin/users/${id}/activate`),
 };

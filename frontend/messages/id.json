@@ -222,7 +222,10 @@
       "colRole": "Peran",
       "colStatus": "Status",
       "active": "aktif",
-      "inactive": "nonaktif"
+      "inactive": "nonaktif",
+      "activate": "Aktifkan",
+      "deactivate": "Nonaktifkan",
+      "confirmDeactivate": "Nonaktifkan {name}? Pengguna ini tidak dapat masuk sampai diaktifkan kembali."
     },
     "auditLogPage": {
       "title": "Log audit",

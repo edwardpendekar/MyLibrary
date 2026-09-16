@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban } from "lucide-react";
+import { Ban, CircleCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,12 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminUsers, useChangeUserRole, useDeactivateUser } from "@/hooks/admin/use-admin-stats";
+import {
+  useActivateUser,
+  useAdminUsers,
+  useChangeUserRole,
+  useDeactivateUser,
+} from "@/hooks/admin/use-admin-stats";
 
 const ROLES = ["admin", "editor", "user", "guest"];
 
@@ -24,6 +29,7 @@ export default function AdminUsersPage() {
   const { data: users, isPending } = useAdminUsers();
   const changeRole = useChangeUserRole();
   const deactivate = useDeactivateUser();
+  const activate = useActivateUser();
 
   return (
     <div className="space-y-6">
@@ -77,14 +83,27 @@ export default function AdminUsersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={!u.is_active}
-                      onClick={() => deactivate.mutate(u.id)}
-                    >
-                      <Ban className="size-4" />
-                    </Button>
+                    {u.is_active ? (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={t("deactivate")}
+                        onClick={() => {
+                          if (confirm(t("confirmDeactivate", { name: u.name }))) deactivate.mutate(u.id);
+                        }}
+                      >
+                        <Ban className="size-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={t("activate")}
+                        onClick={() => activate.mutate(u.id)}
+                      >
+                        <CircleCheck className="size-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

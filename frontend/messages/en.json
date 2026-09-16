@@ -222,7 +222,10 @@
       "colRole": "Role",
       "colStatus": "Status",
       "active": "active",
-      "inactive": "inactive"
+      "inactive": "inactive",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "confirmDeactivate": "Deactivate {name}? They won't be able to log in until reactivated."
     },
     "auditLogPage": {
       "title": "Audit log",

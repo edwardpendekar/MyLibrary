@@ -173,4 +173,5 @@ func registerAdminRoutes(api *gin.RouterGroup, issuer *jwtutil.Issuer, h *Handle
 	users.GET("", h.AdminUsers.List)
 	users.PUT("/:id/role", middleware.Audit(svc.Audit, "change_role", "user"), h.AdminUsers.ChangeRole)
 	users.DELETE("/:id", middleware.Audit(svc.Audit, "deactivate", "user"), h.AdminUsers.Deactivate)
+	users.PUT("/:id/activate", middleware.Audit(svc.Audit, "activate", "user"), h.AdminUsers.Activate)
 }

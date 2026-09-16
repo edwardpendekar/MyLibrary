@@ -61,6 +61,15 @@ func (s *UserService) Deactivate(ctx context.Context, userID int64) error {
 	return s.users.Update(ctx, user)
 }
 
+func (s *UserService) Activate(ctx context.Context, userID int64) error {
+	user, err := s.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	user.IsActive = true
+	return s.users.Update(ctx, user)
+}
+
 func (s *UserService) ChangePassword(ctx context.Context, userID int64, newPassword string) error {
 	user, err := s.GetByID(ctx, userID)
 	if err != nil {

@@ -69,3 +69,20 @@ func (h *UserHandler) Deactivate(c *gin.Context) {
 	}
 	response.NoContent(c)
 }
+
+// Activate godoc
+// @Tags admin-users
+// @Param id path int true "user id"
+// @Success 204
+// @Router /admin/users/{id}/activate [put]
+func (h *UserHandler) Activate(c *gin.Context) {
+	id, ok := httpx.ParamInt64(c, "id")
+	if !ok {
+		return
+	}
+	if err := h.svc.Activate(c.Request.Context(), id); err != nil {
+		response.Fail(c, err)
+		return
+	}
+	response.NoContent(c)
+}
