@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { KeyRound, LogOut, User as UserIcon } from "lucide-react";
 
 import { Link } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -67,6 +67,14 @@ export function UserMenu() {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem
+          render={
+            <Link href="/account/change-password">
+              <KeyRound className="size-4" />
+              {t("changePassword")}
+            </Link>
+          }
+        />
         <DropdownMenuItem onClick={() => logout.mutate()}>
           <LogOut className="size-4" />
           {t("logout")}

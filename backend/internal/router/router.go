@@ -91,6 +91,7 @@ func registerPublicRoutes(api *gin.RouterGroup, issuer *jwtutil.Issuer, redisCac
 	auth.POST("/reset-password", authLimiter, h.Auth.ResetPassword)
 
 	api.GET("/me", middleware.Auth(issuer), h.Me.Me)
+	api.PUT("/me/password", middleware.Auth(issuer), authLimiter, h.Auth.ChangePassword)
 	api.GET("/me/favorites", middleware.Auth(issuer), h.Favorites.List)
 
 	// NOTE: Gin's router rejects two different wildcard names (:slug vs :id) at the

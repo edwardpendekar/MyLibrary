@@ -93,7 +93,15 @@ func (f *fakeRefreshTokenRepo) Revoke(_ context.Context, id int64, replacedBy *i
 	}
 	return nil
 }
-func (f *fakeRefreshTokenRepo) RevokeAllForUser(context.Context, int64) error { return nil }
+func (f *fakeRefreshTokenRepo) RevokeAllForUser(_ context.Context, userID int64) error {
+	now := time.Now()
+	for _, t := range f.byHash {
+		if t.UserID == userID && t.RevokedAt == nil {
+			t.RevokedAt = &now
+		}
+	}
+	return nil
+}
 
 type fakeSessionRepo struct{}
 
@@ -310,6 +318,60 @@ func TestAuthService_ResetPassword_Success(t *testing.T) {
 	// The token is single-use.
 	if err := svc.ResetPassword(ctx, token, "another-password1"); err == nil {
 		t.Error("expected a reused reset token to be rejected")
+	}
+}
+
+func TestAuthService_ChangePassword_Success(t *testing.T) {
+	svc, _ := newTestAuthService()
+	ctx := context.Background()
+
+	user, err := svc.Register(ctx, "Jane", "jane@example.com", "old-password1")
+	if err != nil {
+		t.Fatalf("registration failed: %v", err)
+	}
+	first, err := svc.Login(ctx, "jane@example.com", "old-password1", service.RequestMeta{})
+	if err != nil {
+		t.Fatalf("login failed: %v", err)
+	}
+
+	if err := svc.ChangePassword(ctx, user.ID, "old-password1", "new-password1"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, err := svc.Login(ctx, "jane@example.com", "old-password1", service.RequestMeta{}); err == nil {
+		t.Error("expected old password to no longer work")
+	}
+	if _, err := svc.Login(ctx, "jane@example.com", "new-password1", service.RequestMeta{}); err != nil {
+		t.Errorf("expected new password to work, got %v", err)
+	}
+
+	// Existing sessions must be revoked by a password change.
+	if _, err := svc.Refresh(ctx, first.RefreshToken, service.RequestMeta{}); err == nil {
+		t.Error("expected the pre-change refresh token to be revoked")
+	}
+}
+
+func TestAuthService_ChangePassword_WrongCurrentPassword(t *testing.T) {
+	svc, _ := newTestAuthService()
+	ctx := context.Background()
+
+	user, err := svc.Register(ctx, "Jane", "jane@example.com", "correct-password")
+	if err != nil {
+		t.Fatalf("registration failed: %v", err)
+	}
+
+	err = svc.ChangePassword(ctx, user.ID, "wrong-password", "new-password1")
+	appErr, ok := apperror.As(err)
+	if !ok {
+		t.Fatalf("expected an *apperror.Error, got %T: %v", err, err)
+	}
+	if appErr.Code != apperror.CodeUnauthorized {
+		t.Errorf("expected CodeUnauthorized, got %s", appErr.Code)
+	}
+
+	// The password must be unchanged.
+	if _, err := svc.Login(ctx, "jane@example.com", "correct-password", service.RequestMeta{}); err != nil {
+		t.Errorf("expected original password to still work, got %v", err)
 	}
 }
 

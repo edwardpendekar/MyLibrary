@@ -6,7 +6,8 @@
     "admin": "Admin",
     "login": "Masuk",
     "logout": "Keluar",
-    "register": "Buat akun"
+    "register": "Buat akun",
+    "changePassword": "Ganti kata sandi"
   },
   "home": {
     "title": "Temukan buku untuk dibaca",
@@ -93,7 +94,15 @@
     "resetPassword": "Atur ulang kata sandi",
     "resetPasswordSuccess": "Kata sandi Anda telah diperbarui. Anda sekarang dapat masuk.",
     "resetPasswordInvalid": "Tautan reset ini tidak valid atau sudah kedaluwarsa.",
-    "requestNewLink": "Minta tautan baru"
+    "requestNewLink": "Minta tautan baru",
+    "changePasswordTitle": "Ganti kata sandi",
+    "currentPassword": "Kata sandi saat ini",
+    "confirmNewPassword": "Konfirmasi kata sandi baru",
+    "changePassword": "Ganti kata sandi",
+    "changePasswordSuccess": "Kata sandi berhasil diganti. Silakan masuk kembali.",
+    "changePasswordFailed": "Gagal mengganti kata sandi. Silakan coba lagi.",
+    "currentPasswordIncorrect": "Kata sandi saat ini salah.",
+    "passwordsDontMatch": "Kata sandi tidak cocok."
   },
   "admin": {
     "dashboard": "Dasbor",

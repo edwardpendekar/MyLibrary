@@ -77,6 +77,22 @@ export function useResetPassword() {
   });
 }
 
+/** Succeeding logs the user out (the backend revokes every session), so the
+ * caller should redirect to /login on success. */
+export function useChangePassword() {
+  const setUser = useAuthStore((s) => s.setUser);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
+      authService.changePassword(currentPassword, newPassword),
+    onSuccess: () => {
+      setUser(null);
+      queryClient.clear();
+    },
+  });
+}
+
 export function isUnauthorized(error: unknown): boolean {
   return error instanceof ApiError && error.status === 401;
 }

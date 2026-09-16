@@ -188,6 +188,37 @@ func (s *AuthService) ResetPassword(ctx context.Context, rawToken, newPassword s
 	return nil
 }
 
+// ChangePassword is the self-service path (logged-in user changing their own
+// password from account settings) — it requires the current password, unlike
+// ResetPassword (via emailed token) or an admin forcing another user's
+// password, which don't have one to check.
+func (s *AuthService) ChangePassword(ctx context.Context, userID int64, currentPassword, newPassword string) error {
+	user, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return apperror.Internal("failed to load user", err)
+	}
+	if user == nil {
+		return apperror.Unauthorized("account not found")
+	}
+	if !hash.VerifyPassword(user.PasswordHash, currentPassword) {
+		return apperror.Unauthorized("current password is incorrect")
+	}
+
+	hashed, err := hash.HashPassword(newPassword)
+	if err != nil {
+		return apperror.Internal("failed to hash password", err)
+	}
+	user.PasswordHash = hashed
+	if err := s.users.Update(ctx, user); err != nil {
+		return apperror.Internal("failed to update password", err)
+	}
+
+	// Same reasoning as ResetPassword: a device that's lost/stolen shouldn't
+	// keep a valid session after the owner locks it out via a password change.
+	_ = s.refresh.RevokeAllForUser(ctx, user.ID)
+	return nil
+}
+
 func (s *AuthService) Logout(ctx context.Context, rawRefreshToken string) error {
 	hashed := hash.HashToken(rawRefreshToken)
 	stored, err := s.refresh.FindByHash(ctx, hashed)

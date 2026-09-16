@@ -147,6 +147,31 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	response.NoContent(c)
 }
 
+// ChangePassword godoc
+// @Summary      Change the current user's own password
+// @Tags         auth
+// @Accept       json
+// @Param        body body dto.ChangePasswordRequest true "Current and new password"
+// @Success      204
+// @Failure      401 {object} response.Envelope
+// @Router       /me/password [put]
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	userID, ok := requireUser(c)
+	if !ok {
+		return
+	}
+	var req dto.ChangePasswordRequest
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	if err := h.auth.ChangePassword(c.Request.Context(), userID, req.CurrentPassword, req.NewPassword); err != nil {
+		response.Fail(c, err)
+		return
+	}
+	h.clearAuthCookies(c)
+	response.NoContent(c)
+}
+
 // Logout godoc
 // @Summary      Revoke the current refresh token and clear session cookies
 // @Tags         auth

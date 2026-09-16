@@ -6,7 +6,8 @@
     "admin": "Admin",
     "login": "Log in",
     "logout": "Log out",
-    "register": "Create account"
+    "register": "Create account",
+    "changePassword": "Change password"
   },
   "home": {
     "title": "Discover books to read",
@@ -93,7 +94,15 @@
     "resetPassword": "Reset password",
     "resetPasswordSuccess": "Your password has been reset. You can now log in.",
     "resetPasswordInvalid": "This reset link is invalid or has expired.",
-    "requestNewLink": "Request a new link"
+    "requestNewLink": "Request a new link",
+    "changePasswordTitle": "Change your password",
+    "currentPassword": "Current password",
+    "confirmNewPassword": "Confirm new password",
+    "changePassword": "Change password",
+    "changePasswordSuccess": "Password changed. Please log in again.",
+    "changePasswordFailed": "Couldn't change your password. Please try again.",
+    "currentPasswordIncorrect": "Current password is incorrect.",
+    "passwordsDontMatch": "Passwords don't match."
   },
   "admin": {
     "dashboard": "Dashboard",
