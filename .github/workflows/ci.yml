@@ -114,6 +114,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # tsc alone can't see PageProps/LayoutProps — Next.js's typed-routes
+      # feature generates those as ambient types under .next/types/, which
+      # only exists after this. Without it, every typed route file fails
+      # with "Cannot find name 'PageProps'" despite compiling fine locally,
+      # where a prior `next dev`/`next build` already left .next/types/ in place.
+      - name: Generate Next.js route types
+        run: npx next typegen
+
       - name: Typecheck
         run: npx tsc --noEmit
 
