@@ -170,6 +170,13 @@
       "chaptersCreated": "Pasal",
       "sectionsCreated": "Bagian"
     },
+    "markdown": {
+      "bold": "Tebal",
+      "italic": "Miring",
+      "write": "Tulis",
+      "preview": "Pratinjau",
+      "nothingToPreview": "Belum ada yang bisa dipratinjau."
+    },
     "fileUpload": {
       "coverTitle": "Gambar sampul",
       "pdfTitle": "PDF ebook",

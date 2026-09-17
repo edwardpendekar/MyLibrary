@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { BookOpen, Download, FileText } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 import { apiServer } from "@/lib/api-server";
 import { Link } from "@/i18n/navigation";
@@ -51,7 +52,13 @@ export default async function BookDetailPage({
           {book.description && (
             <div>
               <h2 className="font-medium">{t("description")}</h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{book.description}</p>
+              {/* react-markdown never renders raw HTML embedded in the source
+                  by default (no rehype-raw plugin), so this stays safe even
+                  though the admin-authored description isn't otherwise
+                  sanitized — only **bold**, paragraphs, lists, etc. render. */}
+              <div className="prose prose-sm dark:prose-invert mt-1 max-w-none text-muted-foreground prose-p:leading-relaxed">
+                <ReactMarkdown>{book.description}</ReactMarkdown>
+              </div>
             </div>
           )}
 

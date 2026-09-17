@@ -14,8 +14,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { MarkdownTextarea } from "@/features/admin/components/markdown-textarea";
 import {
   Select,
   SelectContent,
@@ -116,7 +116,7 @@ export function BookForm({
             <FormItem>
               <FormLabel>{t("description")}</FormLabel>
               <FormControl>
-                <Textarea rows={3} {...field} />
+                <MarkdownTextarea value={field.value ?? ""} onChange={field.onChange} rows={4} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -170,6 +170,13 @@
       "chaptersCreated": "Chapters",
       "sectionsCreated": "Sections"
     },
+    "markdown": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "write": "Write",
+      "preview": "Preview",
+      "nothingToPreview": "Nothing to preview yet."
+    },
     "fileUpload": {
       "coverTitle": "Cover image",
       "pdfTitle": "PDF ebook",
