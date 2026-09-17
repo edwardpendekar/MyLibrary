@@ -62,6 +62,12 @@ ISI PASAL (EN):
 Balas HANYA dengan JSON sesuai skema yang diberikan, tanpa markdown code fence, tanpa komentar tambahan."""
 
 CHAPTER_LINE_RE = re.compile(r"^\s*(chapter|pasal)\s+([ivxlcdm\d]+)\b[:.\-]?\s*(.*)$", re.IGNORECASE)
+# Fallback for manuscripts that open each chapter with a bare "1. Title" line
+# (no "Chapter"/"Pasal" keyword) — since a plain number is far more likely to
+# also appear as a numbered list item inside a chapter's body, this is only
+# treated as a chapter boundary when its number continues the sequence
+# (1, 2, 3, ...) starting from wherever the previous chapter left off.
+NUMBER_TITLE_RE = re.compile(r"^\s*(\d+)[.):]\s+(.+?)\s*$")
 
 
 class TranslationError(Exception):
@@ -75,6 +81,7 @@ def extract_chapters_docx(path):
     chapters = []
     current_title = None
     current_paras = []
+    expected_next_number = 1
 
     def flush():
         nonlocal current_title, current_paras
@@ -90,7 +97,19 @@ def extract_chapters_docx(path):
         if style_name.lower().startswith("heading"):
             flush()
             current_title = text
-        elif text.strip():
+            continue
+
+        # Also recognized even without a real Word heading style: a plain
+        # "1. Title" paragraph, as long as its number continues the chapter
+        # sequence (see NUMBER_TITLE_RE's comment).
+        m = NUMBER_TITLE_RE.match(text)
+        if m and int(m.group(1)) == expected_next_number:
+            flush()
+            current_title = m.group(2).strip()
+            expected_next_number += 1
+            continue
+
+        if text.strip():
             current_paras.append(text)
     flush()
 
@@ -108,6 +127,7 @@ def extract_chapters_txt(path):
     current_title = None
     current_lines = []
     found_heading = False
+    expected_next_number = 1
 
     def flush():
         nonlocal current_title, current_lines
@@ -123,8 +143,17 @@ def extract_chapters_txt(path):
             found_heading = True
             flush()
             current_title = m.group(3).strip()
-        else:
-            current_lines.append(line)
+            continue
+
+        m2 = NUMBER_TITLE_RE.match(line)
+        if m2 and int(m2.group(1)) == expected_next_number:
+            found_heading = True
+            flush()
+            current_title = m2.group(2).strip()
+            expected_next_number += 1
+            continue
+
+        current_lines.append(line)
     flush()
 
     if not found_heading:
