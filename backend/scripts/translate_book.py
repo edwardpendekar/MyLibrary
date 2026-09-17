@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
-"""Turns an English book manuscript (.docx or .txt) into the Book/Chapter/
-Verse/text_en/text_id/title_en/title_id CSV format the Go backend's admin
-import pipeline already understands (see internal/service/import_parser.go).
+"""Translates one chapter's English text into the Book/Chapter/Verse/text_en/
+text_id/title_en/title_id CSV format the Go backend's admin import pipeline
+already understands (see internal/service/import_parser.go).
 
-Chapters are detected from the document itself (Word heading styles for
-.docx, "Chapter N" / "Pasal N" lines for .txt) and numbered sequentially in
-document order. Each chapter's English text is sent to the Gemini API once,
-asking it to translate to Indonesian in the style of Alkitab Terjemahan Baru
-edisi 2 (TB2) and split the chapter into short numbered verses.
+The admin pastes a single chapter's title + body (not a whole-book document —
+splitting a long manuscript into many sequential Gemini calls turned out to
+be slow and fragile against transient API errors). This script makes exactly
+one Gemini call, asking it to translate to Indonesian in the style of
+Alkitab Terjemahan Baru edisi 2 and split the chapter into short numbered
+verses.
 
 Never called directly by an admin — invoked as a subprocess by
 ImportService.Translate in internal/service/import_service.go, which then
-feeds the resulting CSV through the normal upload/preview/commit flow.
+feeds the resulting single-chapter CSV through the normal upload/preview/
+commit flow.
 """
 
 import argparse
 import csv
 import json
 import os
-import re
 import sys
 import time
 import urllib.error
@@ -61,87 +62,9 @@ ISI PASAL (EN):
 
 Balas HANYA dengan JSON sesuai skema yang diberikan, tanpa markdown code fence, tanpa komentar tambahan."""
 
-CHAPTER_LINE_RE = re.compile(r"^\s*(chapter|pasal)\s+([ivxlcdm\d]+)\b[:.\-]?\s*(.*)$", re.IGNORECASE)
-# Fallback for manuscripts that open each chapter with a bare "1. Title" line
-# (no "Chapter"/"Pasal" keyword) — since a plain number is far more likely to
-# also appear as a numbered list item inside a chapter's body, this is only
-# treated as a chapter boundary when its number continues the sequence
-# (1, 2, 3, ...) starting from wherever the previous chapter left off.
-NUMBER_TITLE_RE = re.compile(r"^\s*(\d+)[.):]\s+(.+?)\s*$")
-
 
 class TranslationError(Exception):
     pass
-
-
-def extract_chapters_docx(path):
-    from docx import Document
-
-    doc = Document(path)
-    lines = [p.text for p in doc.paragraphs]
-    is_heading = [bool(p.style and p.style.name.lower().startswith("heading")) for p in doc.paragraphs]
-    return split_into_chapters(lines, is_heading, empty_message="no headings or body text found in the .docx file")
-
-
-def extract_chapters_txt(path):
-    with open(path, "r", encoding="utf-8", errors="replace") as f:
-        content = f.read()
-    return split_into_chapters(content.splitlines(), empty_message="the .txt file is empty")
-
-
-def split_into_chapters(lines, is_heading=None, empty_message="the document is empty"):
-    """Splits a document's lines/paragraphs into chapters, recognizing (in this
-    order): a Word heading style (docx only, via is_heading); a "Chapter
-    N"/"Pasal N" line; or a bare "N. Title" line whose number continues the
-    chapter sequence (see NUMBER_TITLE_RE's comment). Falls back to treating
-    the whole document as a single chapter if none of these ever match.
-    """
-    chapters = []
-    current_title = None
-    current_lines = []
-    found_heading = False
-    expected_next_number = 1
-
-    def flush():
-        nonlocal current_title, current_lines
-        text = "\n".join(l for l in current_lines if l.strip())
-        if current_title is not None or text.strip():
-            chapters.append({"title_en": (current_title or "").strip(), "body_en": text})
-        current_title = None
-        current_lines = []
-
-    for i, line in enumerate(lines):
-        if is_heading and is_heading[i]:
-            found_heading = True
-            flush()
-            current_title = line.strip()
-            continue
-
-        m = CHAPTER_LINE_RE.match(line)
-        if m:
-            found_heading = True
-            flush()
-            current_title = m.group(3).strip()
-            continue
-
-        m2 = NUMBER_TITLE_RE.match(line)
-        if m2 and int(m2.group(1)) == expected_next_number:
-            found_heading = True
-            flush()
-            current_title = m2.group(2).strip()
-            expected_next_number += 1
-            continue
-
-        if line.strip():
-            current_lines.append(line)
-    flush()
-
-    if not found_heading:
-        text = "\n".join(l for l in lines if l.strip())
-        if not text.strip():
-            raise TranslationError(empty_message)
-        return [{"title_en": "", "body_en": text}]
-    return chapters
 
 
 def translate_chapter(api_key, model, title_en, body_en, max_retries=5):
@@ -173,8 +96,8 @@ def translate_chapter(api_key, model, title_en, body_en, max_retries=5):
             candidate = body["candidates"][0]
             if candidate.get("finishReason") == "MAX_TOKENS":
                 raise TranslationError(
-                    "chapter terlalu panjang untuk sekali diterjemahkan (respons Gemini terpotong) -- "
-                    "pecah pasal ini jadi beberapa bagian lebih kecil di dokumen sumber"
+                    "pasal terlalu panjang untuk sekali diterjemahkan (respons Gemini terpotong) -- "
+                    "coba pecah jadi dua input pasal yang lebih pendek"
                 )
             text = candidate["content"]["parts"][0]["text"]
             parsed = json.loads(text)
@@ -206,58 +129,34 @@ def translate_chapter(api_key, model, title_en, body_en, max_retries=5):
     raise TranslationError("unreachable")
 
 
-def run(input_path, book_title, output_path, model, delay_seconds, api_key):
-    ext = os.path.splitext(input_path)[1].lower()
-    if ext == ".docx":
-        chapters = extract_chapters_docx(input_path)
-    elif ext == ".txt":
-        chapters = extract_chapters_txt(input_path)
-    else:
-        raise TranslationError(f"unsupported file type {ext!r}: use .docx or .txt")
+def run(input_path, book_title, chapter_number, title_en, output_path, model, api_key):
+    with open(input_path, "r", encoding="utf-8", errors="replace") as f:
+        body_en = f.read().strip()
+    if not body_en:
+        raise TranslationError("chapter body is empty")
+
+    result = translate_chapter(api_key, model, title_en, body_en)
+    title_id = result.get("title_id", "")
 
     with open(output_path, "w", encoding="utf-8", newline="") as out:
         writer = csv.writer(out, quoting=csv.QUOTE_ALL)
         writer.writerow(["book", "chapter", "verse", "text_en", "text_id", "title_en", "title_id"])
+        for v_num, verse in enumerate(result["verses"], start=1):
+            writer.writerow(
+                [book_title, chapter_number, v_num, verse.get("text_en", ""), verse.get("text_id", ""), title_en, title_id]
+            )
 
-        for idx, chapter in enumerate(chapters, start=1):
-            print(f"Translating chapter {idx}/{len(chapters)}...", file=sys.stderr, flush=True)
-            try:
-                result = translate_chapter(api_key, model, chapter["title_en"], chapter["body_en"])
-            except TranslationError as e:
-                raise TranslationError(f"chapter {idx} ('{chapter['title_en']}'): {e}") from e
-
-            title_id = result.get("title_id", "")
-            for v_num, verse in enumerate(result["verses"], start=1):
-                writer.writerow(
-                    [
-                        book_title,
-                        idx,
-                        v_num,
-                        verse.get("text_en", ""),
-                        verse.get("text_id", ""),
-                        chapter["title_en"],
-                        title_id,
-                    ]
-                )
-
-            if idx < len(chapters):
-                time.sleep(delay_seconds)
-
-    print(f"Translated {len(chapters)} chapter(s) -> {output_path}", file=sys.stderr)
+    print(f"Translated chapter {chapter_number} ({len(result['verses'])} verses) -> {output_path}", file=sys.stderr)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", required=True, help="path to the .docx or .txt manuscript")
+    parser.add_argument("--input", required=True, help="path to a plain UTF-8 text file with the chapter's English body")
     parser.add_argument("--book", required=True, help="exact title of the existing book to import into")
+    parser.add_argument("--chapter", required=True, type=int, help="chapter number")
+    parser.add_argument("--title", default="", help="chapter title in English (optional)")
     parser.add_argument("--output", required=True, help="path to write the generated CSV to")
     parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"))
-    parser.add_argument(
-        "--delay",
-        type=float,
-        default=float(os.environ.get("GEMINI_REQUEST_DELAY_SECONDS", "4.5")),
-        help="seconds to sleep between chapters, to stay under the free-tier rate limit",
-    )
     args = parser.parse_args()
 
     api_key = os.environ.get("GEMINI_API_KEY", "")
@@ -266,7 +165,7 @@ def main():
         sys.exit(1)
 
     try:
-        run(args.input, args.book, args.output, args.model, args.delay, api_key)
+        run(args.input, args.book, args.chapter, args.title, args.output, args.model, api_key)
     except TranslationError as e:
         print(f"FATAL: {e}", file=sys.stderr)
         sys.exit(1)

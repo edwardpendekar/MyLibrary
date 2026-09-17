@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -64,14 +65,13 @@ func NewImportService(
 	}
 }
 
-// TranslateConfig configures the "translate a whole book from an uploaded
-// English document" feature — see backend/scripts/translate_book.py.
+// TranslateConfig configures the admin "translate one chapter" feature —
+// see backend/scripts/translate_book.py.
 type TranslateConfig struct {
 	PythonBin      string
 	ScriptPath     string
 	GeminiAPIKey   string
 	GeminiModel    string
-	RequestDelay   time.Duration
 	CommandTimeout time.Duration
 }
 
@@ -115,33 +115,37 @@ func (s *ImportService) Upload(ctx context.Context, file *domain.File, uploadedB
 	return log, preview, nil
 }
 
-// Translate stages an admin-uploaded English manuscript (.docx/.txt), records
-// an ImportLog in "translating" status, and hands the file off to a
-// background goroutine that runs it through backend/scripts/translate_book.py
-// (chapter-splitting + Gemini translation into TB2-style Indonesian verses).
-// That script's only job is to produce a CSV in the exact shape the normal
-// Upload/Commit pipeline above already understands — once it succeeds, this
-// import log flips to "ready" and the admin reviews/commits it exactly like
-// any other CSV import, through the same preview screen.
-func (s *ImportService) Translate(ctx context.Context, cfg TranslateConfig, docFile *domain.File, uploadedBy int64, filename, bookTitle string) (*domain.ImportLog, error) {
+// Translate records an ImportLog in "translating" status for one chapter's
+// pasted English text and hands it off to a background goroutine that runs
+// it through backend/scripts/translate_book.py (one Gemini call, translating
+// into TB2-style Indonesian verses). That script's only job is to produce a
+// CSV in the exact shape the normal Upload/Commit pipeline above already
+// understands — once it succeeds, this import log flips to "ready" and the
+// admin reviews/commits it exactly like any other CSV import, through the
+// same preview screen.
+func (s *ImportService) Translate(ctx context.Context, cfg TranslateConfig, uploadedBy int64, bookTitle string, chapterNumber int, titleEN, bodyEN string) (*domain.ImportLog, error) {
 	if cfg.GeminiAPIKey == "" {
 		return nil, apperror.Validation("translation is not configured on this server (GEMINI_API_KEY is missing)", nil)
 	}
 
+	filename := fmt.Sprintf("Chapter %d", chapterNumber)
+	if titleEN != "" {
+		filename = fmt.Sprintf("Chapter %d: %s", chapterNumber, titleEN)
+	}
 	log := &domain.ImportLog{
-		UploadedBy: &uploadedBy, SourceFileID: &docFile.ID, Filename: filename,
+		UploadedBy: &uploadedBy, Filename: filename,
 		Status: domain.ImportStatusTranslating, Mode: domain.ImportModeInsert,
 	}
 	if err := s.importLogs.Create(ctx, log); err != nil {
 		return nil, apperror.Internal("failed to create import log", err)
 	}
 
-	go s.runTranslate(cfg, log.ID, docFile, uploadedBy, bookTitle)
+	go s.runTranslate(cfg, log.ID, uploadedBy, bookTitle, chapterNumber, titleEN, bodyEN)
 
 	return log, nil
 }
 
-func (s *ImportService) runTranslate(cfg TranslateConfig, logID int64, docFile *domain.File, uploadedBy int64, bookTitle string) {
+func (s *ImportService) runTranslate(cfg TranslateConfig, logID, uploadedBy int64, bookTitle string, chapterNumber int, titleEN, bodyEN string) {
 	// A fresh background context, not tied to the HTTP request: this runs long
 	// after the request that triggered it has returned. markFailed below
 	// deliberately uses context.Background() too, so a failure is still
@@ -154,22 +158,30 @@ func (s *ImportService) runTranslate(cfg TranslateConfig, logID int64, docFile *
 		return
 	}
 
-	localDocPath, cleanup, err := s.stageLocalCopy(ctx, docFile.StoredPath)
+	inputFile, err := os.CreateTemp("", "bookreader-translate-in-*.txt")
 	if err != nil {
-		s.markFailed(context.Background(), log, fmt.Errorf("stage uploaded document: %w", err))
+		s.markFailed(context.Background(), log, fmt.Errorf("stage chapter text: %w", err))
 		return
 	}
-	defer cleanup()
+	inputPath := inputFile.Name()
+	defer os.Remove(inputPath)
+	if _, err := inputFile.WriteString(bodyEN); err != nil {
+		inputFile.Close()
+		s.markFailed(context.Background(), log, fmt.Errorf("stage chapter text: %w", err))
+		return
+	}
+	inputFile.Close()
 
-	csvPath := localDocPath + ".translated.csv"
+	csvPath := inputPath + ".translated.csv"
 	defer os.Remove(csvPath)
 
 	cmd := exec.CommandContext(ctx, cfg.PythonBin, cfg.ScriptPath,
-		"--input", localDocPath,
+		"--input", inputPath,
 		"--book", bookTitle,
+		"--chapter", strconv.Itoa(chapterNumber),
+		"--title", titleEN,
 		"--output", csvPath,
 		"--model", cfg.GeminiModel,
-		"--delay", fmt.Sprintf("%.1f", cfg.RequestDelay.Seconds()),
 	)
 	// The API key travels via the child process's environment, never as a CLI
 	// argument, so it never shows up in a process listing.

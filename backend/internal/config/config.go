@@ -97,7 +97,6 @@ type SMTP struct {
 type Translate struct {
 	GeminiAPIKey   string
 	GeminiModel    string
-	RequestDelay   time.Duration
 	PythonBin      string
 	ScriptPath     string
 	CommandTimeout time.Duration
@@ -167,7 +166,6 @@ func Load() (*Config, error) {
 		Translate: Translate{
 			GeminiAPIKey:   getEnv("GEMINI_API_KEY", ""),
 			GeminiModel:    getEnv("GEMINI_MODEL", "gemini-3.6-flash"),
-			RequestDelay:   getDuration("GEMINI_REQUEST_DELAY", 4500*time.Millisecond),
 			PythonBin:      getEnv("PYTHON_BIN", "python3"),
 			ScriptPath:     getEnv("TRANSLATE_SCRIPT_PATH", "scripts/translate_book.py"),
 			CommandTimeout: getDuration("TRANSLATE_COMMAND_TIMEOUT", 30*time.Minute),

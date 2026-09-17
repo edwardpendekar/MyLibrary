@@ -6,9 +6,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminImportService } from "@/services/admin/import.service";
 import type { ImportLog } from "@/types/api";
 
-export function useTranslateBook() {
+export function useTranslateChapter() {
   return useMutation({
-    mutationFn: ({ file, bookId }: { file: File; bookId: number }) => adminImportService.translate(file, bookId),
+    mutationFn: (input: { bookId: number; chapterNumber: number; titleEn: string; bodyEn: string }) =>
+      adminImportService.translate(input),
   });
 }
 

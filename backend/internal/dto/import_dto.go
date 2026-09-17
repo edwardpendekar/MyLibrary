@@ -32,6 +32,13 @@ type CommitImportRequest struct {
 	Mode string `json:"mode" validate:"required,oneof=insert upsert"`
 }
 
+type TranslateChapterRequest struct {
+	BookID        int64  `json:"book_id" validate:"required"`
+	ChapterNumber int    `json:"chapter_number" validate:"required,min=1"`
+	TitleEN       string `json:"title_en"`
+	BodyEN        string `json:"body_en" validate:"required"`
+}
+
 type ImportLogResponse struct {
 	ID              int64      `json:"id"`
 	Filename        string     `json:"filename"`

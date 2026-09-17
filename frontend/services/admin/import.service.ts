@@ -7,12 +7,13 @@ export const adminImportService = {
     form.set("file", file);
     return apiClient.upload<ImportPreview>("/api/v1/admin/import/upload", form);
   },
-  translate: (file: File, bookId: number) => {
-    const form = new FormData();
-    form.set("file", file);
-    form.set("book_id", String(bookId));
-    return apiClient.upload<ImportLog>("/api/v1/admin/import/translate", form);
-  },
+  translate: (input: { bookId: number; chapterNumber: number; titleEn: string; bodyEn: string }) =>
+    apiClient.post<ImportLog>("/api/v1/admin/import/translate", {
+      book_id: input.bookId,
+      chapter_number: input.chapterNumber,
+      title_en: input.titleEn,
+      body_en: input.bodyEn,
+    }),
   preview: (id: number) => apiClient.get<ImportPreview>(`/api/v1/admin/import/${id}/preview`),
   commit: (id: number, mode: "insert" | "upsert") =>
     apiClient.post<ImportLog>(`/api/v1/admin/import/${id}/commit`, { mode }),

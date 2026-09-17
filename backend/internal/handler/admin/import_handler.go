@@ -1,9 +1,6 @@
 package admin
 
 import (
-	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,10 +16,7 @@ import (
 	"bookreader/backend/pkg/response"
 )
 
-const (
-	maxImportFileSize    = 500 << 20 // 500MB, comfortably covers a 1M+ row spreadsheet
-	maxTranslateFileSize = 25 << 20  // 25MB comfortably covers a whole book manuscript
-)
+const maxImportFileSize = 500 << 20 // 500MB, comfortably covers a 1M+ row spreadsheet
 
 type ImportHandler struct {
 	imports   *service.ImportService
@@ -101,62 +95,30 @@ func (h *ImportHandler) Upload(c *gin.Context) {
 }
 
 // Translate godoc
-// @Summary      Upload an English manuscript and translate it into an importable CSV
+// @Summary      Translate one chapter's pasted English text into an importable CSV
 // @Tags         admin-import
-// @Accept       multipart/form-data
-// @Param        file formData file true ".docx or .txt manuscript for the whole book"
-// @Param        book_id formData int true "existing book to import the translated content into"
+// @Accept       json
+// @Param        request body dto.TranslateChapterRequest true "book, chapter number, and English title/body"
 // @Success      200 {object} response.Envelope{data=dto.ImportLogResponse}
 // @Router       /admin/import/translate [post]
 func (h *ImportHandler) Translate(c *gin.Context) {
-	header, err := c.FormFile("file")
-	if err != nil {
-		response.Fail(c, apperror.Validation("file is required", nil))
-		return
-	}
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext != ".docx" && ext != ".txt" {
-		response.Fail(c, apperror.Validation("file must be .docx or .txt", nil))
-		return
-	}
-	if header.Size > maxTranslateFileSize {
-		response.Fail(c, apperror.Validation("file must be 25MB or smaller", nil))
+	var req dto.TranslateChapterRequest
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 
-	bookID, err := strconv.ParseInt(c.PostForm("book_id"), 10, 64)
-	if err != nil {
-		response.Fail(c, apperror.Validation("book_id is required", nil))
-		return
-	}
-	book, err := h.books.FindByID(c.Request.Context(), bookID)
+	book, err := h.books.FindByID(c.Request.Context(), req.BookID)
 	if err != nil || book == nil {
 		response.Fail(c, apperror.NotFound("book not found"))
 		return
 	}
 
 	userID, _ := middleware.UserID(c)
-	stream, err := header.Open()
-	if err != nil {
-		response.Fail(c, apperror.Internal("failed to read uploaded file", err))
-		return
-	}
-	defer stream.Close()
-
-	uploaded, err := h.files.Upload(c.Request.Context(), service.UploadInput{
-		Folder: "imports", Filename: header.Filename, ContentType: header.Header.Get("Content-Type"),
-		Size: header.Size, Reader: stream, UploadedBy: userID,
-	})
-	if err != nil {
-		response.Fail(c, err)
-		return
-	}
-
 	log, err := h.imports.Translate(c.Request.Context(), service.TranslateConfig{
 		PythonBin: h.translate.PythonBin, ScriptPath: h.translate.ScriptPath,
 		GeminiAPIKey: h.translate.GeminiAPIKey, GeminiModel: h.translate.GeminiModel,
-		RequestDelay: h.translate.RequestDelay, CommandTimeout: h.translate.CommandTimeout,
-	}, uploaded, userID, header.Filename, book.Title)
+		CommandTimeout: h.translate.CommandTimeout,
+	}, userID, book.Title, req.ChapterNumber, req.TitleEN, req.BodyEN)
 	if err != nil {
 		response.Fail(c, err)
 		return
