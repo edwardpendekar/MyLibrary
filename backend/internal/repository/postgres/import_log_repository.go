@@ -28,7 +28,7 @@ func (r *importLogRepository) Create(ctx context.Context, l *domain.ImportLog) e
 func (r *importLogRepository) Update(ctx context.Context, l *domain.ImportLog) error {
 	m := importLogFromDomain(l)
 	return r.db.WithContext(ctx).Model(&importLogModel{}).Where("id = ?", l.ID).Updates(map[string]interface{}{
-		"status": m.Status, "total_rows": m.TotalRows, "processed_rows": m.ProcessedRows,
+		"source_file_id": m.SourceFileID, "status": m.Status, "total_rows": m.TotalRows, "processed_rows": m.ProcessedRows,
 		"books_created": m.BooksCreated, "chapters_created": m.ChaptersCreated,
 		"sections_created": m.SectionsCreated, "verses_inserted": m.VersesInserted,
 		"verses_updated": m.VersesUpdated, "verses_skipped": m.VersesSkipped,

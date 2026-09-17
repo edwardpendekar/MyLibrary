@@ -141,6 +141,52 @@ func TestImportPipeline_InsertMode_CreatesBooksChaptersVerses(t *testing.T) {
 	}
 }
 
+// TestImportLogRepository_Update_PersistsSourceFileID guards against a real
+// production bug: ImportLogRepository.Update wrote an explicit allowlist of
+// columns that omitted source_file_id. Every existing caller only ever set
+// SourceFileID at Create time, so no test ever exercised changing it via
+// Update -- until ImportService.Translate started doing exactly that (the
+// translated CSV file doesn't exist yet when the log row is first created).
+// The admin-visible symptom was the preview screen never appearing: Preview()
+// treats a nil SourceFileID as "nothing to show yet" and fails silently.
+func TestImportLogRepository_Update_PersistsSourceFileID(t *testing.T) {
+	env := setupTestEnv(t)
+	ctx := context.Background()
+
+	userRepo := postgres.NewUserRepository(env.DB)
+	admin, err := userRepo.FindByEmail(ctx, "admin@bookreader.local")
+	if err != nil || admin == nil {
+		t.Fatalf("seeded admin user not found: %v", err)
+	}
+
+	fileRepo := postgres.NewFileRepository(env.DB)
+	importLogRepo := postgres.NewImportLogRepository(env.DB)
+
+	log := &domain.ImportLog{UploadedBy: &admin.ID, Filename: "chapter.txt", Status: domain.ImportStatusTranslating, Mode: domain.ImportModeInsert}
+	if err := importLogRepo.Create(ctx, log); err != nil {
+		t.Fatalf("create import log: %v", err)
+	}
+
+	file := &domain.File{UploadedBy: &admin.ID, OriginalName: "translated.csv", StoredPath: "imports/translated.csv", Provider: "local", MimeType: "text/csv", SizeBytes: 10, ChecksumSHA256: "deadbeef"}
+	if err := fileRepo.Create(ctx, file); err != nil {
+		t.Fatalf("create file: %v", err)
+	}
+
+	log.SourceFileID = &file.ID
+	log.Status = domain.ImportStatusReady
+	if err := importLogRepo.Update(ctx, log); err != nil {
+		t.Fatalf("update import log: %v", err)
+	}
+
+	reloaded, err := importLogRepo.FindByID(ctx, log.ID)
+	if err != nil || reloaded == nil {
+		t.Fatalf("reload import log: %v", err)
+	}
+	if reloaded.SourceFileID == nil || *reloaded.SourceFileID != file.ID {
+		t.Fatalf("expected source_file_id to persist as %d, got %v", file.ID, reloaded.SourceFileID)
+	}
+}
+
 func TestImportPipeline_UpsertMode_UpdatesExistingVerses(t *testing.T) {
 	env := setupTestEnv(t)
 	fx := newImportFixture(t, env)

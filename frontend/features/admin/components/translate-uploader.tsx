@@ -51,7 +51,9 @@ export function TranslateUploader() {
   const commit = useCommitImport();
   const commitProgress = useImportProgress(committedId);
 
-  const isBusy = translate.isPending || (!!jobId && !preview.data && translateStatus?.status !== "failed");
+  const isBusy =
+    translate.isPending ||
+    (!!jobId && !preview.data && translateStatus?.status !== "failed" && !preview.isError);
 
   function handleSubmit() {
     const chapter = Number(chapterNumber);
@@ -137,6 +139,11 @@ export function TranslateUploader() {
               {t("statusLabel")}: {t(`status.${translateStatus.status}`)}
             </p>
             {translateStatus.error_message && <p className="text-destructive">{translateStatus.error_message}</p>}
+            {preview.isError && (
+              <p className="text-destructive">
+                {preview.error instanceof Error ? preview.error.message : t("translateFailed")}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
