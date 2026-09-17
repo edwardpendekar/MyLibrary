@@ -270,7 +270,7 @@ def main():
     parser.add_argument("--input", required=True, help="path to the .docx or .txt manuscript")
     parser.add_argument("--book", required=True, help="exact title of the existing book to import into")
     parser.add_argument("--output", required=True, help="path to write the generated CSV to")
-    parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"))
+    parser.add_argument("--model", default=os.environ.get("GEMINI_MODEL", "gemini-3.6-flash"))
     parser.add_argument(
         "--delay",
         type=float,
