@@ -144,7 +144,7 @@ def split_into_chapters(lines, is_heading=None, empty_message="the document is e
     return chapters
 
 
-def translate_chapter(api_key, model, title_en, body_en, max_retries=3):
+def translate_chapter(api_key, model, title_en, body_en, max_retries=5):
     prompt = PROMPT_TEMPLATE.format(title_en=title_en or "(tidak ada judul)", body_en=body_en)
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -158,6 +158,7 @@ def translate_chapter(api_key, model, title_en, body_en, max_retries=3):
     url = GEMINI_ENDPOINT.format(model=model)
     data = json.dumps(payload).encode("utf-8")
     delay = 5
+    max_delay = 30
 
     for attempt in range(max_retries + 1):
         req = urllib.request.Request(
@@ -186,19 +187,19 @@ def translate_chapter(api_key, model, title_en, body_en, max_retries=3):
             body_text = e.read().decode(errors="replace")
             if (e.code == 429 or e.code >= 500) and attempt < max_retries:
                 time.sleep(delay)
-                delay *= 2
+                delay = min(delay * 2, max_delay)
                 continue
             raise TranslationError(f"Gemini API error {e.code}: {body_text}")
         except (urllib.error.URLError, TimeoutError) as e:
             if attempt < max_retries:
                 time.sleep(delay)
-                delay *= 2
+                delay = min(delay * 2, max_delay)
                 continue
             raise TranslationError(f"Gemini API request failed: {e}")
         except (KeyError, IndexError, json.JSONDecodeError, ValueError) as e:
             if attempt < max_retries:
                 time.sleep(delay)
-                delay *= 2
+                delay = min(delay * 2, max_delay)
                 continue
             raise TranslationError(f"Gemini API returned an unparseable response: {e}")
 
