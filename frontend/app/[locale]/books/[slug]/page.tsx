@@ -49,19 +49,6 @@ export default async function BookDetailPage({
             {book.chapters_count} {t("chapters")} · {book.verses_count} {t("verses")}
           </p>
 
-          {book.description && (
-            <div>
-              <h2 className="font-medium">{t("description")}</h2>
-              {/* react-markdown never renders raw HTML embedded in the source
-                  by default (no rehype-raw plugin), so this stays safe even
-                  though the admin-authored description isn't otherwise
-                  sanitized — only **bold**, paragraphs, lists, etc. render. */}
-              <div className="prose prose-sm dark:prose-invert mt-1 max-w-none text-muted-foreground prose-p:leading-relaxed">
-                <ReactMarkdown>{book.description}</ReactMarkdown>
-              </div>
-            </div>
-          )}
-
           {/* Read/Open PDF/Download are navigation, not in-page actions, so
               they get button styling on a real <Link>/<a> rather than being
               wrapped in the Button component — see SiteHeader for why. */}
@@ -85,6 +72,19 @@ export default async function BookDetailPage({
             <FavoriteButton bookId={book.id} isFavorite={!!book.is_favorite} />
             <ShareButton title={book.title} path={`/books/${book.slug}`} />
           </div>
+
+          {book.description && (
+            <div>
+              <h2 className="font-medium">{t("description")}</h2>
+              {/* react-markdown never renders raw HTML embedded in the source
+                  by default (no rehype-raw plugin), so this stays safe even
+                  though the admin-authored description isn't otherwise
+                  sanitized — only **bold**, paragraphs, lists, etc. render. */}
+              <div className="prose prose-sm dark:prose-invert mt-1 max-w-none text-muted-foreground prose-p:leading-relaxed">
+                <ReactMarkdown>{book.description}</ReactMarkdown>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
