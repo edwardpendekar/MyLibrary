@@ -6,6 +6,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminImportService } from "@/services/admin/import.service";
 import type { ImportLog } from "@/types/api";
 
+export function useTranslateBook() {
+  return useMutation({
+    mutationFn: ({ file, bookId }: { file: File; bookId: number }) => adminImportService.translate(file, bookId),
+  });
+}
+
+export function useImportPreview(importLogId: number | null) {
+  return useQuery({
+    queryKey: ["admin", "import", "preview", importLogId],
+    queryFn: () => adminImportService.preview(importLogId as number),
+    select: (res) => res.data,
+    enabled: !!importLogId,
+  });
+}
+
 export function useImportHistory() {
   return useQuery({
     queryKey: ["admin", "import", "history"],
@@ -29,6 +44,10 @@ export function useCommitImport() {
 }
 
 const TERMINAL_STATUSES = new Set(["completed", "failed", "rolled_back"]);
+// "ready" also ends a stream started right after Translate() (translating ->
+// ready), even though the plain CSV upload flow never has an open stream
+// while status is "ready" — its preview comes back synchronously from Upload.
+const STREAM_CLOSE_STATUSES = new Set([...TERMINAL_STATUSES, "ready"]);
 
 /** Subscribes to the backend's SSE progress stream for one import job. */
 export function useImportProgress(importLogId: number | null) {
@@ -48,6 +67,8 @@ export function useImportProgress(importLogId: number | null) {
       if (TERMINAL_STATUSES.has(parsed.status)) {
         queryClient.invalidateQueries({ queryKey: ["admin", "import", "history"] });
         queryClient.invalidateQueries({ queryKey: ["admin", "books"] });
+      }
+      if (STREAM_CLOSE_STATUSES.has(parsed.status)) {
         source.close();
       }
     });

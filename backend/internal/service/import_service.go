@@ -1,11 +1,16 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -59,6 +64,17 @@ func NewImportService(
 	}
 }
 
+// TranslateConfig configures the "translate a whole book from an uploaded
+// English document" feature — see backend/scripts/translate_book.py.
+type TranslateConfig struct {
+	PythonBin      string
+	ScriptPath     string
+	GeminiAPIKey   string
+	GeminiModel    string
+	RequestDelay   time.Duration
+	CommandTimeout time.Duration
+}
+
 type PreviewResult struct {
 	TotalRows      int
 	DistinctBooks  int
@@ -96,6 +112,160 @@ func (s *ImportService) Upload(ctx context.Context, file *domain.File, uploadedB
 	log.TotalRows = preview.TotalRows
 	_ = s.importLogs.Update(ctx, log)
 
+	return log, preview, nil
+}
+
+// Translate stages an admin-uploaded English manuscript (.docx/.txt), records
+// an ImportLog in "translating" status, and hands the file off to a
+// background goroutine that runs it through backend/scripts/translate_book.py
+// (chapter-splitting + Gemini translation into TB2-style Indonesian verses).
+// That script's only job is to produce a CSV in the exact shape the normal
+// Upload/Commit pipeline above already understands — once it succeeds, this
+// import log flips to "ready" and the admin reviews/commits it exactly like
+// any other CSV import, through the same preview screen.
+func (s *ImportService) Translate(ctx context.Context, cfg TranslateConfig, docFile *domain.File, uploadedBy int64, filename, bookTitle string) (*domain.ImportLog, error) {
+	if cfg.GeminiAPIKey == "" {
+		return nil, apperror.Validation("translation is not configured on this server (GEMINI_API_KEY is missing)", nil)
+	}
+
+	log := &domain.ImportLog{
+		UploadedBy: &uploadedBy, SourceFileID: &docFile.ID, Filename: filename,
+		Status: domain.ImportStatusTranslating, Mode: domain.ImportModeInsert,
+	}
+	if err := s.importLogs.Create(ctx, log); err != nil {
+		return nil, apperror.Internal("failed to create import log", err)
+	}
+
+	go s.runTranslate(cfg, log.ID, docFile, uploadedBy, bookTitle)
+
+	return log, nil
+}
+
+func (s *ImportService) runTranslate(cfg TranslateConfig, logID int64, docFile *domain.File, uploadedBy int64, bookTitle string) {
+	// A fresh background context, not tied to the HTTP request: this runs long
+	// after the request that triggered it has returned. markFailed below
+	// deliberately uses context.Background() too, so a failure is still
+	// recorded even if this timeout has just fired.
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.CommandTimeout)
+	defer cancel()
+
+	log, err := s.importLogs.FindByID(ctx, logID)
+	if err != nil || log == nil {
+		return
+	}
+
+	localDocPath, cleanup, err := s.stageLocalCopy(ctx, docFile.StoredPath)
+	if err != nil {
+		s.markFailed(context.Background(), log, fmt.Errorf("stage uploaded document: %w", err))
+		return
+	}
+	defer cleanup()
+
+	csvPath := localDocPath + ".translated.csv"
+	defer os.Remove(csvPath)
+
+	cmd := exec.CommandContext(ctx, cfg.PythonBin, cfg.ScriptPath,
+		"--input", localDocPath,
+		"--book", bookTitle,
+		"--output", csvPath,
+		"--model", cfg.GeminiModel,
+		"--delay", fmt.Sprintf("%.1f", cfg.RequestDelay.Seconds()),
+	)
+	// The API key travels via the child process's environment, never as a CLI
+	// argument, so it never shows up in a process listing.
+	cmd.Env = append(os.Environ(), "GEMINI_API_KEY="+cfg.GeminiAPIKey)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(stderr.String())
+		if msg == "" {
+			msg = err.Error()
+		}
+		s.markFailed(context.Background(), log, fmt.Errorf("translation failed: %s", msg))
+		return
+	}
+
+	csvFile, err := os.Open(csvPath)
+	if err != nil {
+		s.markFailed(context.Background(), log, fmt.Errorf("open generated csv: %w", err))
+		return
+	}
+	defer csvFile.Close()
+	stat, err := csvFile.Stat()
+	if err != nil {
+		s.markFailed(context.Background(), log, fmt.Errorf("stat generated csv: %w", err))
+		return
+	}
+
+	storedFile, err := s.storeGeneratedCSV(context.Background(), csvFile, stat.Size(), uploadedBy)
+	if err != nil {
+		s.markFailed(context.Background(), log, err)
+		return
+	}
+
+	preview, err := s.scanForPreview(csvPath, storedFile.OriginalName)
+	if err != nil {
+		s.markFailed(context.Background(), log, fmt.Errorf("validate generated csv: %w", err))
+		return
+	}
+
+	log.SourceFileID = &storedFile.ID
+	log.Status = domain.ImportStatusReady
+	log.TotalRows = preview.TotalRows
+	_ = s.importLogs.Update(context.Background(), log)
+}
+
+func (s *ImportService) storeGeneratedCSV(ctx context.Context, r io.Reader, size int64, uploadedBy int64) (*domain.File, error) {
+	hasher := sha256.New()
+	tee := io.TeeReader(r, hasher)
+
+	meta, err := s.storage.Save(ctx, "imports", "translated.csv", tee, size, "text/csv")
+	if err != nil {
+		return nil, apperror.Internal("failed to store generated csv", err)
+	}
+
+	file := &domain.File{
+		UploadedBy: &uploadedBy, OriginalName: "translated.csv", StoredPath: meta.Key,
+		Provider: providerName(s.storage), MimeType: "text/csv", SizeBytes: meta.Size,
+		ChecksumSHA256: hex.EncodeToString(hasher.Sum(nil)),
+	}
+	if err := s.files.Create(ctx, file); err != nil {
+		return nil, apperror.Internal("failed to record generated csv file", err)
+	}
+	return file, nil
+}
+
+// Preview re-scans a translated (or originally uploaded) file for the admin's
+// review screen — used after Translate flips a log to "ready", since unlike
+// Upload it does not have a live HTTP request to return the preview on.
+func (s *ImportService) Preview(ctx context.Context, id int64) (*domain.ImportLog, *PreviewResult, error) {
+	log, err := s.importLogs.FindByID(ctx, id)
+	if err != nil {
+		return nil, nil, apperror.Internal("failed to load import log", err)
+	}
+	if log == nil {
+		return nil, nil, apperror.NotFound("import job not found")
+	}
+	if log.SourceFileID == nil {
+		return log, nil, apperror.Validation("import job has no file to preview", nil)
+	}
+
+	file, err := s.files.FindByID(ctx, *log.SourceFileID)
+	if err != nil || file == nil {
+		return log, nil, apperror.Internal("source file no longer available", err)
+	}
+
+	localPath, cleanup, err := s.stageLocalCopy(ctx, file.StoredPath)
+	if err != nil {
+		return log, nil, apperror.Internal("failed to read file", err)
+	}
+	defer cleanup()
+
+	preview, err := s.scanForPreview(localPath, file.OriginalName)
+	if err != nil {
+		return log, nil, apperror.Validation("file validation failed", map[string]string{"_": err.Error()})
+	}
 	return log, preview, nil
 }
 

@@ -1,10 +1,15 @@
 package admin
 
 import (
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"bookreader/backend/internal/config"
+	"bookreader/backend/internal/domain"
 	"bookreader/backend/internal/dto"
 	"bookreader/backend/internal/middleware"
 	"bookreader/backend/internal/service"
@@ -14,15 +19,20 @@ import (
 	"bookreader/backend/pkg/response"
 )
 
-const maxImportFileSize = 500 << 20 // 500MB, comfortably covers a 1M+ row spreadsheet
+const (
+	maxImportFileSize    = 500 << 20 // 500MB, comfortably covers a 1M+ row spreadsheet
+	maxTranslateFileSize = 25 << 20  // 25MB comfortably covers a whole book manuscript
+)
 
 type ImportHandler struct {
-	imports *service.ImportService
-	files   *service.FileService
+	imports   *service.ImportService
+	files     *service.FileService
+	books     domain.BookRepository
+	translate config.Translate
 }
 
-func NewImportHandler(imports *service.ImportService, files *service.FileService) *ImportHandler {
-	return &ImportHandler{imports: imports, files: files}
+func NewImportHandler(imports *service.ImportService, files *service.FileService, books domain.BookRepository, translateCfg config.Translate) *ImportHandler {
+	return &ImportHandler{imports: imports, files: files, books: books, translate: translateCfg}
 }
 
 // Upload godoc
@@ -70,6 +80,109 @@ func (h *ImportHandler) Upload(c *gin.Context) {
 		ImportLogID: log.ID, Status: log.Status,
 		// Never nil: Go serializes a nil slice as JSON null, not [], which
 		// crashes naive frontend code doing `.length` on an "always an array" field.
+		SampleRows:     []dto.ImportRowResponse{},
+		ValidationErrs: []dto.ImportRowErrorResponse{},
+	}
+	if preview != nil {
+		resp.TotalRows = preview.TotalRows
+		resp.DistinctBooks = preview.DistinctBooks
+		resp.DistinctChapt = preview.DistinctChapt
+		for _, r := range preview.SampleRows {
+			resp.SampleRows = append(resp.SampleRows, dto.ImportRowResponse{
+				RowNumber: r.RowNumber, Book: r.Book, Chapter: r.Chapter, Verse: r.Verse,
+				TextEN: r.TextEN, TextID: r.TextID, TitleEN: r.TitleEN, TitleID: r.TitleID,
+			})
+		}
+		for _, e := range preview.ValidationErrs {
+			resp.ValidationErrs = append(resp.ValidationErrs, dto.ImportRowErrorResponse{RowNumber: e.RowNumber, Message: e.Message})
+		}
+	}
+	response.OK(c, resp)
+}
+
+// Translate godoc
+// @Summary      Upload an English manuscript and translate it into an importable CSV
+// @Tags         admin-import
+// @Accept       multipart/form-data
+// @Param        file formData file true ".docx or .txt manuscript for the whole book"
+// @Param        book_id formData int true "existing book to import the translated content into"
+// @Success      200 {object} response.Envelope{data=dto.ImportLogResponse}
+// @Router       /admin/import/translate [post]
+func (h *ImportHandler) Translate(c *gin.Context) {
+	header, err := c.FormFile("file")
+	if err != nil {
+		response.Fail(c, apperror.Validation("file is required", nil))
+		return
+	}
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	if ext != ".docx" && ext != ".txt" {
+		response.Fail(c, apperror.Validation("file must be .docx or .txt", nil))
+		return
+	}
+	if header.Size > maxTranslateFileSize {
+		response.Fail(c, apperror.Validation("file must be 25MB or smaller", nil))
+		return
+	}
+
+	bookID, err := strconv.ParseInt(c.PostForm("book_id"), 10, 64)
+	if err != nil {
+		response.Fail(c, apperror.Validation("book_id is required", nil))
+		return
+	}
+	book, err := h.books.FindByID(c.Request.Context(), bookID)
+	if err != nil || book == nil {
+		response.Fail(c, apperror.NotFound("book not found"))
+		return
+	}
+
+	userID, _ := middleware.UserID(c)
+	stream, err := header.Open()
+	if err != nil {
+		response.Fail(c, apperror.Internal("failed to read uploaded file", err))
+		return
+	}
+	defer stream.Close()
+
+	uploaded, err := h.files.Upload(c.Request.Context(), service.UploadInput{
+		Folder: "imports", Filename: header.Filename, ContentType: header.Header.Get("Content-Type"),
+		Size: header.Size, Reader: stream, UploadedBy: userID,
+	})
+	if err != nil {
+		response.Fail(c, err)
+		return
+	}
+
+	log, err := h.imports.Translate(c.Request.Context(), service.TranslateConfig{
+		PythonBin: h.translate.PythonBin, ScriptPath: h.translate.ScriptPath,
+		GeminiAPIKey: h.translate.GeminiAPIKey, GeminiModel: h.translate.GeminiModel,
+		RequestDelay: h.translate.RequestDelay, CommandTimeout: h.translate.CommandTimeout,
+	}, uploaded, userID, header.Filename, book.Title)
+	if err != nil {
+		response.Fail(c, err)
+		return
+	}
+	response.OK(c, dto.ToImportLogResponse(log))
+}
+
+// Preview godoc
+// @Summary      Re-fetch the validation preview for an import job once it's ready
+// @Tags         admin-import
+// @Param        id path int true "import log id"
+// @Success      200 {object} response.Envelope{data=dto.ImportPreviewResponse}
+// @Router       /admin/import/{id}/preview [get]
+func (h *ImportHandler) Preview(c *gin.Context) {
+	id, ok := httpx.ParamInt64(c, "id")
+	if !ok {
+		return
+	}
+	log, preview, err := h.imports.Preview(c.Request.Context(), id)
+	if err != nil {
+		response.Fail(c, err)
+		return
+	}
+
+	resp := dto.ImportPreviewResponse{
+		ImportLogID: log.ID, Status: log.Status,
 		SampleRows:     []dto.ImportRowResponse{},
 		ValidationErrs: []dto.ImportRowErrorResponse{},
 	}
@@ -195,9 +308,14 @@ func (h *ImportHandler) List(c *gin.Context) {
 	response.OKWithMeta(c, items, pagination.Page{NextCursor: result.NextCursor, HasMore: result.HasMore, Limit: len(items)})
 }
 
+// isTerminalStatus tells the SSE loop when to stop polling. "ready" is
+// included alongside the normal terminal statuses because it also ends a
+// stream started by Translate (translating -> ready), even though the plain
+// CSV upload flow never opens a stream while status is "ready" (its preview
+// is returned synchronously by Upload instead).
 func isTerminalStatus(status string) bool {
 	switch status {
-	case "completed", "failed", "rolled_back":
+	case "ready", "completed", "failed", "rolled_back":
 		return true
 	default:
 		return false

@@ -165,7 +165,9 @@ func registerAdminRoutes(api *gin.RouterGroup, issuer *jwtutil.Issuer, h *Handle
 	imports := admin.Group("/import")
 	imports.GET("", h.AdminImport.List)
 	imports.POST("/upload", middleware.Audit(svc.Audit, "upload", "import"), h.AdminImport.Upload)
+	imports.POST("/translate", middleware.Audit(svc.Audit, "translate", "import"), h.AdminImport.Translate)
 	imports.GET("/:id", h.AdminImport.Status)
+	imports.GET("/:id/preview", h.AdminImport.Preview)
 	imports.GET("/:id/stream", h.AdminImport.Stream)
 	imports.POST("/:id/commit", middleware.Audit(svc.Audit, "commit", "import"), h.AdminImport.Commit)
 

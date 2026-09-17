@@ -128,7 +128,7 @@ func main() {
 		AdminUsers:      adminh.NewUserHandler(userSvc),
 		AdminStats:      adminh.NewStatsHandler(statsSvc),
 		AdminAudit:      adminh.NewAuditHandler(auditSvc),
-		AdminImport:     adminh.NewImportHandler(importSvc, fileSvc),
+		AdminImport:     adminh.NewImportHandler(importSvc, fileSvc, bookRepo, cfg.Translate),
 	}
 
 	engine := router.New(cfg, log, issuer, redisCache, h, &router.Services{Audit: auditSvc})

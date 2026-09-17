@@ -218,13 +218,14 @@ type Note struct {
 }
 
 const (
-	ImportStatusPending    = "pending"
-	ImportStatusValidating = "validating"
-	ImportStatusReady      = "ready"
-	ImportStatusImporting  = "importing"
-	ImportStatusCompleted  = "completed"
-	ImportStatusFailed     = "failed"
-	ImportStatusRolledBack = "rolled_back"
+	ImportStatusPending     = "pending"
+	ImportStatusValidating  = "validating"
+	ImportStatusReady       = "ready"
+	ImportStatusTranslating = "translating"
+	ImportStatusImporting   = "importing"
+	ImportStatusCompleted   = "completed"
+	ImportStatusFailed      = "failed"
+	ImportStatusRolledBack  = "rolled_back"
 
 	ImportModeInsert = "insert"
 	ImportModeUpsert = "upsert"

@@ -126,6 +126,7 @@ export interface ImportLog {
     | "pending"
     | "validating"
     | "ready"
+    | "translating"
     | "importing"
     | "completed"
     | "failed"

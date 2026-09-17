@@ -22,6 +22,7 @@ type Config struct {
 	CORS
 	RateLimit
 	SMTP
+	Translate
 	FrontendURL string
 }
 
@@ -88,6 +89,20 @@ type SMTP struct {
 	From     string
 }
 
+// Translate configures the admin "translate a whole book from an uploaded
+// English document" feature: a Python subprocess (google-docx parsing + the
+// Gemini API) turns the document into a CSV in the same shape the regular
+// Excel/CSV importer already understands, so it can flow through that
+// existing, battle-tested pipeline unchanged.
+type Translate struct {
+	GeminiAPIKey   string
+	GeminiModel    string
+	RequestDelay   time.Duration
+	PythonBin      string
+	ScriptPath     string
+	CommandTimeout time.Duration
+}
+
 // Load reads a .env file if present (local dev convenience; ignored in
 // containers where env vars are injected directly) and builds the Config,
 // applying sane defaults so the service is runnable with a minimal .env.
@@ -148,6 +163,14 @@ func Load() (*Config, error) {
 			Username: getEnv("SMTP_USERNAME", ""),
 			Password: getEnv("SMTP_PASSWORD", ""),
 			From:     getEnv("SMTP_FROM", "no-reply@bookreader.local"),
+		},
+		Translate: Translate{
+			GeminiAPIKey:   getEnv("GEMINI_API_KEY", ""),
+			GeminiModel:    getEnv("GEMINI_MODEL", "gemini-2.0-flash"),
+			RequestDelay:   getDuration("GEMINI_REQUEST_DELAY", 4500*time.Millisecond),
+			PythonBin:      getEnv("PYTHON_BIN", "python3"),
+			ScriptPath:     getEnv("TRANSLATE_SCRIPT_PATH", "scripts/translate_book.py"),
+			CommandTimeout: getDuration("TRANSLATE_COMMAND_TIMEOUT", 30*time.Minute),
 		},
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 	}
