@@ -78,51 +78,24 @@ def extract_chapters_docx(path):
     from docx import Document
 
     doc = Document(path)
-    chapters = []
-    current_title = None
-    current_paras = []
-    expected_next_number = 1
-
-    def flush():
-        nonlocal current_title, current_paras
-        text = "\n".join(p for p in current_paras if p.strip())
-        if current_title is not None or text.strip():
-            chapters.append({"title_en": (current_title or "").strip(), "body_en": text})
-        current_title = None
-        current_paras = []
-
-    for para in doc.paragraphs:
-        style_name = para.style.name if para.style else ""
-        text = para.text
-        if style_name.lower().startswith("heading"):
-            flush()
-            current_title = text
-            continue
-
-        # Also recognized even without a real Word heading style: a plain
-        # "1. Title" paragraph, as long as its number continues the chapter
-        # sequence (see NUMBER_TITLE_RE's comment).
-        m = NUMBER_TITLE_RE.match(text)
-        if m and int(m.group(1)) == expected_next_number:
-            flush()
-            current_title = m.group(2).strip()
-            expected_next_number += 1
-            continue
-
-        if text.strip():
-            current_paras.append(text)
-    flush()
-
-    if not chapters:
-        raise TranslationError("no headings or body text found in the .docx file")
-    return chapters
+    lines = [p.text for p in doc.paragraphs]
+    is_heading = [bool(p.style and p.style.name.lower().startswith("heading")) for p in doc.paragraphs]
+    return split_into_chapters(lines, is_heading, empty_message="no headings or body text found in the .docx file")
 
 
 def extract_chapters_txt(path):
     with open(path, "r", encoding="utf-8", errors="replace") as f:
         content = f.read()
+    return split_into_chapters(content.splitlines(), empty_message="the .txt file is empty")
 
-    lines = content.splitlines()
+
+def split_into_chapters(lines, is_heading=None, empty_message="the document is empty"):
+    """Splits a document's lines/paragraphs into chapters, recognizing (in this
+    order): a Word heading style (docx only, via is_heading); a "Chapter
+    N"/"Pasal N" line; or a bare "N. Title" line whose number continues the
+    chapter sequence (see NUMBER_TITLE_RE's comment). Falls back to treating
+    the whole document as a single chapter if none of these ever match.
+    """
     chapters = []
     current_title = None
     current_lines = []
@@ -137,7 +110,13 @@ def extract_chapters_txt(path):
         current_title = None
         current_lines = []
 
-    for line in lines:
+    for i, line in enumerate(lines):
+        if is_heading and is_heading[i]:
+            found_heading = True
+            flush()
+            current_title = line.strip()
+            continue
+
         m = CHAPTER_LINE_RE.match(line)
         if m:
             found_heading = True
@@ -153,13 +132,14 @@ def extract_chapters_txt(path):
             expected_next_number += 1
             continue
 
-        current_lines.append(line)
+        if line.strip():
+            current_lines.append(line)
     flush()
 
     if not found_heading:
-        text = content.strip()
-        if not text:
-            raise TranslationError("the .txt file is empty")
+        text = "\n".join(l for l in lines if l.strip())
+        if not text.strip():
+            raise TranslationError(empty_message)
         return [{"title_en": "", "body_en": text}]
     return chapters
 
